@@ -1,0 +1,3 @@
+% Folder for OTHER ocean bottom pressure models, e.g. OMCT, ECCO 12 hours,...
+% Matlab structure array: out_mat.lon, out_mat.lat (created using meshgrid function, arbitrary structure array name, e.g. other_model, out_mat, new...) + 
+% Each file contains: 	out_mat.total layer (water column in mm)

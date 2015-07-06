@@ -1,0 +1,4 @@
+% Folder for GLDAS/VIC model
+% Matlab structure array: out_mat.lon, out_mat.lat (created using meshgrid function, arbitrary structure array name, e.g. out_mat, gldas_vic, new...) + 
+% Each file contains: 	out_mat.soilm1 - out_mat.soilm3 (soil moisture)
+%					  	out_mat.swe (snow water equivalent)

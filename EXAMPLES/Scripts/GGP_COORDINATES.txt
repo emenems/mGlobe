@@ -1,0 +1,12 @@
+% ID longitude(deg)   latitude(deg)   height(m)   Site Name
+BF          8.32728       48.32983      589.20   Schiltach
+BH          8.61130       50.22850      190.00   Bad_Homburg
+CO         15.86087       47.92876     1045.10   Conrad
+MB          6.00660       50.60930      250.00   Membach
+MC         11.64500       44.52190       28.00   Medicina
+MO         11.61600       50.61600      455.00   Moxa
+PE         14.78560       49.91380      534.60   Pecny
+OS         11.92670       57.39580        7.00   Onsala
+ST          7.68380       48.62170      180.00   Strasbourg
+WE         12.87800       49.14400      580.00   Wettzell
+YS         -3.09020       40.52380      917.69   Yebes

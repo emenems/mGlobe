@@ -1,0 +1,4 @@
+% Folder for NCEP Reanalysis-2 surface level model
+% Matlab structure array: out_mat.lon, out_mat.lat (created using meshgrid function, arbitrary structure array name, e.g. out_mat, ncep_interim, new...) + 
+% Each file contains: 	out_mat.soilw1 - out_mat.soilw2 (soil moisture)
+%					  	out_mat.weasd (snow water equivalent)

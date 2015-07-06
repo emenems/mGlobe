@@ -1,0 +1,3 @@
+% Folder for OMCT/AOD1B ocean bottom pressure model
+% Matlab structure array: omct.lon, omct.lat (created using meshgrid function) + 
+% Each file contains: 	omct.obp layer (ocean bottom pressure computed for selected layer, i.e. atm, ocn or oba)

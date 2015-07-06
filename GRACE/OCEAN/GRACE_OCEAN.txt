@@ -1,0 +1,3 @@
+% Folder for GRACE OCEAN mass grids
+% Matlab structure array: grace.lon, grace.lat (created using meshgrid function, arbitrary structure array name, e.g. out_mat, grace, new...) + 
+% Each file contains: 	grace.total layer (total/relative ocean column in cm)

@@ -1,0 +1,25 @@
+% Elastic Love Numbers k(degree) Computed by Dazhong Han as described by Han and Wahr (1995), for Earth Model PREM.
+% Values obtained from Table 1.: Wahr et al., 1998. Time variability of the Earth's gravity field: Hydrological and oceanic effects and their possible detection using GRACE. Journal of Geophysical Research, vol. 103, no. B12, p30205-30229.
+% Origin of the coordinate system: centre of the figure of the solid Earth's surface.
+% degree   k(degree)
+  0       0.000
+  1 	  0.027
+  2 	 -0.303
+  3 	 -0.194
+  4 	 -0.132
+  5 	 -0.104
+  6 	 -0.089
+  7 	 -0.081
+  8 	 -0.076
+  9 	 -0.072
+ 10	 	 -0.069
+ 12	 	 -0.064
+ 15	 	 -0.058
+ 20	 	 -0.051
+ 30	 	 -0.040
+ 40	 	 -0.033
+ 50	 	 -0.027
+ 70	 	 -0.020
+100  	 -0.014
+150  	 -0.010
+200  	 -0.007

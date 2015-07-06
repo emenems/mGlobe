@@ -1,0 +1,3 @@
+% Folder for ECCO2 ocean bottom pressure model
+% Matlab structure array: out_mat.lon, out_mat.lat (created using meshgrid function, arbitrary structure array name, e.g. ecco2, out_mat, new...) + 
+% Each file contains: 	out_mat.obp layer (total ocean bottom pressure)

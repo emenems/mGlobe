@@ -1,0 +1,4 @@
+% Folder for GLDAS/CLM model
+% Matlab structure array: out_mat.lon, out_mat.lat (created using meshgrid function, arbitrary structure array name, e.g. out_mat, gldas_clm, new...) + 
+% Each file contains: 	out_mat.soilm1 - out_mat.soilm10 (soil moisture) 
+% 						out_mat.swe (snow water equivalent) layer
