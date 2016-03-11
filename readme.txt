@@ -22,5 +22,5 @@ The functionality was tested under Windows 7 64-bit OS,
 8 GB of RAM, Intel(R) Core(TM) i7 CPU M620 @ 2.67 GHz,
 using MATLAB(R) R2014b, R2013a and R2012a.
 
-											Michal Mikolaj
-											mikolaj@gfz-potsdam.de
+										Michal Mikolaj
+										mikolaj@gfz-potsdam.de

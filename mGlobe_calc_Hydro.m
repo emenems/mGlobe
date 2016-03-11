@@ -956,14 +956,56 @@ if sum(sum(abs(dgE(~isnan(dgE))))) > 0
         fprintf(fid,'[TIMEFORMAT] DATETIME\n\n');
         fprintf(fid,'[INCREMENT] %8.3f\n\n',time_resol_in_days*24*60*60);
         fprintf(fid,'[CHANNELS]\n');
-        fprintf(fid,'  Location:%s:total_effect\n',model_name); 
-        fprintf(fid,'  Location:%s:continental_loading_effect\n',model_name); 
-        fprintf(fid,'  Location:%s:continental_newtonian_effect\n',model_name); 
-        fprintf(fid,'  Location:%s:ocean_loading_effect\n',model_name); 
-        fprintf(fid,'  Location:%s:ocean_newtonian_effect\n',model_name); 
-        fprintf(fid,'  Location:%s:interpolated local water storage\n\n',model_name); 
-        fprintf(fid,'[UNITS]\n  nm/s^2\n  nm/s^2\n  nm/s^2\n  nm/s^2\n  nm/s^2\n  mm\n\n');
-        fprintf(fid,'[COMMENT]\n\n');
+        fprintf(fid,' Location:%s:total_effect\n',model_name); 
+        fprintf(fid,' Location:%s:continental_loading_effect\n',model_name); 
+        fprintf(fid,' Location:%s:continental_newtonian_effect\n',model_name); 
+        fprintf(fid,' Location:%s:ocean_loading_effect\n',model_name); 
+        fprintf(fid,' Location:%s:ocean_newtonian_effect\n',model_name); 
+        fprintf(fid,' Location:%s:interpolated local water storage\n\n',model_name); 
+        fprintf(fid,'[UNITS]\n nm/s^2\n nm/s^2\n nm/s^2\n nm/s^2\n nm/s^2\n mm\n\n');
+        fprintf(fid,'[COMMENT]\n');
+		fprintf(fid,' Station latitude (deg):   \t%10.8f\n',Input(1));
+        fprintf(fid,' Station longitude (deg):   \t%10.8f\n',Input(2));
+        fprintf(fid,' Station height (m):       \t%8.3f\n',Input(3));
+        fprintf(fid,' Calculation settings:\n'); 
+        fprintf(fid,' DEM:\t%s\n',DEM_file);
+        fprintf(fid,' Excluded area:\t');
+        if (exclude_calc(1) == 0 && exclude_calc(2) == 0) && isempty(inclusion)
+            fprintf(fid,'nothing excluded\n');
+        elseif (exclude_calc(2) == 1 && exclude_calc(1) == 0) && isempty(inclusion)
+            fprintf(fid,'Antarctica\n');
+        elseif (exclude_calc(2) == 0 && exclude_calc(1) == 1) && isempty(inclusion)
+            fprintf(fid,'Greenland\n');
+        elseif (exclude_calc(2) == 1 && exclude_calc(1) == 1) && isempty(inclusion)
+            fprintf(fid,'Greenland and Antarctica\n');
+        else
+            fprintf(fid,'All excluded except the grid cells within the given inclusion polygon\n');
+        end
+        fprintf(fid,' Inclusion polygon:\t');
+        if ~isempty(inclusion)
+            fprintf(fid,' %s\n',INCLUDE_file);
+        else
+            fprintf(fid,' No inclusion polygon loaded\n');
+        end
+        fprintf(fid,' Model:\t %s, layer:\t %s\n',model_name,out_layer);
+        fprintf(fid,' Model resolution:\t%3.2fx%3.2f deg, ',delta_ghm(1),delta_ghm(2));
+        if step_calc == 6
+            fprintf(fid,'Monthly\n');
+        else 
+            fprintf(fid,'Daily/hourly\n');
+        end
+        fprintf(fid,' Mass conservation enforced:\t');
+        switch mass_conserv
+            case 2
+            fprintf(fid,'on (layer on ocean, gravity response to 1 mm: %5.3f nm/s^2)\n',ocean_contrib);
+            case 1
+            fprintf(fid,'off\n');
+            case 3
+            fprintf(fid,'off (coupled continental and ocean model)\n');   
+        end
+        fprintf(fid,' GHE/LHE threshold (deg):\t%5.2f\n',ghc_treshold);
+        ctime = clock;
+        fprintf(fid,' Calc. date:\t%04d/%02d/%02d %02d:%02d:%02d\n\n',ctime(1),ctime(2),ctime(3),ctime(4),ctime(5),round(ctime(6)));
         fprintf(fid,'[COUNTINFO] %8.0f\n\n',length(time(:,7)));
         fprintf(fid,'[DATA]\n');
         [year,month,day,hour,minute,second] = datevec(time(:,7));clear i

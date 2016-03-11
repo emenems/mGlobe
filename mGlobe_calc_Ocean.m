@@ -520,14 +520,40 @@ if sum(sum(abs(dgE(~isnan(dgE))))) > 0
         fprintf(fid,'[TIMEFORMAT] DATETIME\n\n');
         fprintf(fid,'[INCREMENT] %8.3f\n\n',time_resol_in_days*24*60*60);
         fprintf(fid,'[CHANNELS]\n');
-        fprintf(fid,'  Location:%s:total_effect\n',model_name); 
-        fprintf(fid,'  Location:%s:continental_loading_effect\n',model_name); 
-        fprintf(fid,'  Location:%s:continental_newtonian_effect\n',model_name); 
-        fprintf(fid,'  Location:%s:ocean_loading_effect\n',model_name); 
-        fprintf(fid,'  Location:%s:ocean_newtonian_effect\n',model_name); 
-        fprintf(fid,'  Location:%s:subtracted_pressure\n\n',model_name); 
-        fprintf(fid,'[UNITS]\n  nm/s^2\n  nm/s^2\n  nm/s^2\n  nm/s^2\n  nm/s^2\n  Pa\n\n');
-        fprintf(fid,'[COMMENT]\n\n');
+        fprintf(fid,' Location:%s:total_effect\n',model_name); 
+        fprintf(fid,' Location:%s:continental_loading_effect\n',model_name); 
+        fprintf(fid,' Location:%s:continental_newtonian_effect\n',model_name); 
+        fprintf(fid,' Location:%s:ocean_loading_effect\n',model_name); 
+        fprintf(fid,' Location:%s:ocean_newtonian_effect\n',model_name); 
+        fprintf(fid,' Location:%s:subtracted_pressure\n\n',model_name); 
+        fprintf(fid,'[UNITS]\n nm/s^2\n nm/s^2\n nm/s^2\n nm/s^2\n nm/s^2\n Pa\n\n');
+        fprintf(fid,'[COMMENT]\n');
+		fprintf(fid,' Results of the non-tidal ocean loading effect calculation\n');
+        fprintf(fid,' Station latitude (deg):   \t%10.8f\n',Input(1));
+        fprintf(fid,' Station longitude (deg):   \t%10.8f\n',Input(2));
+        fprintf(fid,' Station height (m):       \t%8.3f\n',Input(3));
+        fprintf(fid,' Calculation settings:\n'); 
+        fprintf(fid,' No DEM\n');
+        fprintf(fid,' Nothing Excluded\n');
+        fprintf(fid,' Model:\t %s\n',model_name);
+        fprintf(fid,' Model resolution:\t%3.2fx%3.2f deg, ',delta_ghm(1),delta_ghm(2));
+        if step_calc == 6
+            fprintf(fid,'Monthly\n');
+        else 
+            fprintf(fid,'Daily/hourly\n');
+        end
+        fprintf(fid,' Mass conservation:\t');
+        switch mean_field
+            case 1
+            fprintf(fid,'off\n');
+            case 2
+            fprintf(fid,'Computed area average subtracted\n');
+            case 3
+            fprintf(fid,'Given pressure subtracted %s\n',pressure_time_series{1});
+        end
+        fprintf(fid,' GHE/LHE threshold (deg):\t%5.2f\n',ghc_treshold);
+        ctime = clock;
+        fprintf(fid,' Calc. date:\t%04d/%02d/%02d %02d:%02d:%02d\n\n',ctime(1),ctime(2),ctime(3),ctime(4),ctime(5),round(ctime(6)));
         fprintf(fid,'[COUNTINFO] %8.0f\n\n',length(time(:,7)));
         fprintf(fid,'[DATA]\n');
         [year,month,day,hour,minute,second] = datevec(time(:,7));clear i

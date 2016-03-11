@@ -667,16 +667,42 @@ if sum(sum(abs(dgE(~isnan(dgE))))) > 0
         fprintf(fid,'[TIMEFORMAT] DATETIME\n\n');
         fprintf(fid,'[INCREMENT] %8.3f\n\n',time_resol_in_days*24*60*60);
         fprintf(fid,'[CHANNELS]\n');
-        fprintf(fid,'  Location:%s:total_effect\n','mGlobe'); 
-        fprintf(fid,'  Location:%s:atmoshperic_global_loading_effect\n','mGlobe'); 
-        fprintf(fid,'  Location:%s:atmospheric_global_newtonian_effect\n','mGlobe'); 
-        fprintf(fid,'  Location:%s:atmoshperic_local_loading_effect\n','mGlobe'); 
-        fprintf(fid,'  Location:%s:atmospheric_local_newtonian_effect\n','mGlobe');
-        fprintf(fid,'  Location:%s:model_pressure\n','mGlobe'); 
-        fprintf(fid,'  Location:%s:model_temperature\n','mGlobe');
-        fprintf(fid,'  Location:%s:model_spec.humidity\n\n','mGlobe');
-        fprintf(fid,'[UNITS]\n  nm/s^2\n  nm/s^2\n  nm/s^2\n  nm/s^2\n  nm/s^2\n  Pa\n  K\n  kg/kg\n\n');
-        fprintf(fid,'[COMMENT]\n\n');
+        fprintf(fid,' Location:%s:total_effect\n','mGlobe'); 
+        fprintf(fid,' Location:%s:atmospheric_global_loading_effect\n','mGlobe'); 
+        fprintf(fid,' Location:%s:atmospheric_global_newtonian_effect\n','mGlobe'); 
+        fprintf(fid,' Location:%s:atmospheric_local_loading_effect\n','mGlobe'); 
+        fprintf(fid,' Location:%s:atmospheric_local_newtonian_effect\n','mGlobe');
+        fprintf(fid,' Location:%s:model_pressure\n','mGlobe'); 
+        fprintf(fid,' Location:%s:model_temperature\n','mGlobe');
+        fprintf(fid,' Location:%s:model_spec.humidity\n\n','mGlobe');
+        fprintf(fid,'[UNITS]\n nm/s^2\n nm/s^2\n nm/s^2\n nm/s^2\n nm/s^2\n Pa\n K\n kg/kg\n\n');
+        fprintf(fid,'[COMMENT]\n');
+		fprintf(fid,' Station latitude (deg):   \t%10.8f\n',Input(1));
+        fprintf(fid,' Station longitude (deg):   \t%10.8f\n',Input(2));
+        fprintf(fid,' Station height given / orography (m):       \t%8.3f / %8.3f\n',Input(3),hd_interp);
+        fprintf(fid,' Calculation settings:\n'); 
+        fprintf(fid,' Orography:\t%s\n',file_ref);
+        fprintf(fid,' Surface data:\t%s\n',file_sp);
+        fprintf(fid,' Geopotential data:\t%s\n',file_height);
+        fprintf(fid,' Temperature data:\t%s\n',file_temp);
+        fprintf(fid,' Specific humidity data:\t%s\n',file_humid);
+        if subtract_average == 1
+            fprintf(fid,' Subtract average: on\n');
+        else
+            fprintf(fid,' Subtract average: off\n');
+        end
+        fprintf(fid,' Model:\t %s\n','ERA interim');
+        fprintf(fid,' Model resolution:\t%3.2fx%3.2f deg, ',delta_ghm(1),delta_ghm(2));
+        if step_calc == 6
+            fprintf(fid,'Monthly\n');
+        else 
+            fprintf(fid,'Daily/hourly\n');
+        end
+        fprintf(fid,' Atmospheric ocean loading: no atmo. loading part on ocean\n');
+        fprintf(fid,' GAE/LAE threshold (deg):\t%5.2f\n',0.1);
+        fprintf(fid,' Maximum pressure level:\t%2.0f\n',max_level);
+        ctime = clock;
+        fprintf(fid,' Calc. date:\t%04d/%02d/%02d %02d:%02d:%02d\n\n',ctime(1),ctime(2),ctime(3),ctime(4),ctime(5),round(ctime(6)));
         fprintf(fid,'[COUNTINFO] %8.0f\n\n',length(time(:,7)));
         fprintf(fid,'[DATA]\n');
         [year,month,day,hour,minute,second] = datevec(time(:,7));clear i
