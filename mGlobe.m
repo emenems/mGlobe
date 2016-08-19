@@ -2,7 +2,7 @@ function mGlobe(in_switch)
 %MGLOBE MAIN FUNCTION GENERATING GUI FOR THE mGlobE TOOLBOX
 % mGlobe toolbox allows user to calculate the global hydrological, 
 % atmospheric and non-tidal ocean loading effects. All required inputs
-% can be converted/downloaded via the provided GUI. Obtained results can
+% can be converted via the provided GUI. Obtained results can
 % be visualised using the provided 1D and 2D plotting functions. 
 % Please read the mGlobe_USER_MANUAL.pdf file before using mGlobe.
 % This mGlobe version is designed for reviewing purposes (submitted to 
@@ -23,7 +23,7 @@ function mGlobe(in_switch)
 %   mGlobe_convert_GRACE_tellus
 %   mGlobe_convert_OMCT
 %   mGlobe_convert_OTHER
-%   mGlobe_download_GLDAS
+%   mGlobe_convert_GLDAS
 %   mGlobe_elip2sphere
 %   mGlobe_elip2xyz
 %   mGlobe_Global
@@ -116,7 +116,7 @@ function mGlobe(in_switch)
         p2 = uipanel('Title','Visualize 1D and 2D results','Units','characters',...
                     'Position',[1.4,1.923,109.4,26],...
                     'Tag','uipanel_main_view','Visible','off','FontSize',9);
-        p3 = uipanel('Title','Download and Conversion of Global Model','Units','characters',...
+        p3 = uipanel('Title','Conversion of Global Model','Units','characters',...
                     'Position',[1.4,1.923,109.4,26],...
                     'Tag','uipanel_main_down','Visible','off','FontSize',9);
         p4 = uipanel('Title','Global Atmospheric Effect','Units','characters',...
@@ -162,7 +162,7 @@ function mGlobe(in_switch)
             'Tag','uipanel_view_2D'); 
         
         % PANEL_MODEL
-        p3_1 = uipanel(p3,'Title','GLDAS/MERRA download','Units','characters',...
+        p3_1 = uipanel(p3,'Title','GLDAS/MERRA convert','Units','characters',...
             'Position',[2.2 12.308 104.8 3.923],...
             'Tag','uipanel_down_gldas'); 
         p3_2 = uipanel(p3,'Title','ERA/NCEP convert (netCDF)','Units','characters',...
@@ -570,7 +570,7 @@ function mGlobe(in_switch)
                     'Style','Popupmenu','String','Save As|fig|eps|tiff','BackgroundColor','white',...
                     'Tag','popup_view_printas_2D','Value',1,'UserData',[]);   
 
-        % IN DOWNLOAD/CONVERT
+        % IN CONVERT
         % Gldas/Merra
         uicontrol(p3_1,'units','characters','Position',[1.8 1.11 14 1.08],...
                     'Style','Text','String','Model version');
@@ -585,7 +585,7 @@ function mGlobe(in_switch)
                     'Style','Text','String','Output path','UserData',fullfile('GHM','NOAH025'),...
                     'Tag','push_down_gldas_path');
         uicontrol(p3_1,'units','characters','Position',[81 0.88 21.4 1.7],...
-                    'Style','Pushbutton','String','Download','UserData',[],...
+                    'Style','Pushbutton','String','Convert','UserData',[],...
                     'Tag','push_down_gldas_run','CallBack','mGlobe calc_down_gldas');
         % Era/Ncel
         uicontrol(p3_2,'units','characters','Position',[1.2 0.6 8.4 1.692],...
@@ -1055,7 +1055,7 @@ function mGlobe(in_switch)
                 set(findobj('Tag','radio_switch_view'),'Value',0);
                 set(findobj('Tag','radio_switch_down'),'Value',1);
                 set(findobj('Tag','radio_switch_ocean'),'Value',0);
-                set(findobj('Tag','text_status'),'String','Set your download/conversion options');
+                set(findobj('Tag','text_status'),'String','Set your conversion options');
             case 'switch_ocean'
                 set(findobj('Tag','uipanel_main_hydr'),'Visible','off');
                 set(findobj('Tag','uipanel_main_atmo'),'Visible','off');
@@ -1486,7 +1486,7 @@ function mGlobe(in_switch)
                     end
                 end
                 
-            %%  DOWNLOAD/CONVERT
+            %%  CONVERT
             % GLDAS
             case 'select_down_model'
                 val = get(findobj('Tag','popup_down_gldas_model'),'Value'); % get GLDAS model version
@@ -1511,27 +1511,35 @@ function mGlobe(in_switch)
                         set(findobj('Tag','text_down_gldas_path'),'String','/GHM/MERRA/');
                 end
             case 'calc_down_gldas'
-                model_version = get(findobj('Tag','popup_down_gldas_model'),'Value'); % get all required settings
-                output_path = get(findobj('Tag','push_down_gldas_path'),'UserData');
-                start_calc = datenum(str2double(get(findobj('Tag','edit_down_time_start_year'),'String')),... % Get date of start
-                    str2double(get(findobj('Tag','edit_down_time_start_month'),'String')),...
-                    str2double(get(findobj('Tag','edit_down_time_start_day'),'String')),...
-                    str2double(get(findobj('Tag','edit_down_time_start_hour'),'String')),0,0);
-                end_calc = datenum(str2double(get(findobj('Tag','edit_down_time_end_year'),'String')),... % Get date of end
-                    str2double(get(findobj('Tag','edit_down_time_end_month'),'String')),...
-                    str2double(get(findobj('Tag','edit_down_time_end_day'),'String')),...
-                    str2double(get(findobj('Tag','edit_down_time_end_hour'),'String')),0,0);
-                step_calc = get(findobj('Tag','popup_down_time_step'),'Value'); % Get time step
-                if start_calc > end_calc                                    % check valid settings and perform downloading
-                    set(findobj('Tag','text_status'),'String','Start time must be <= End time');
+                [name,path] = uigetfile('*.nc','Choose ONE input GLDAS or MERRA netCDF file'); % select ERA interim netcdf (*.nc) input file
+                if name == 0                                                
+                    set(findobj('Tag','text_status'),'String','You must select one netcdf file');
                 else
-                    set(findobj('Tag','text_status'),'String','Models: Starting the downloading...');drawnow
-                    if model_version <=6 
-                        mGlobe_download_GLDAS(start_calc,end_calc,model_version,step_calc,output_path); % download+convert GLDAS data
+                    input_path = path;
+                    input_file = name;
+                    model_version = get(findobj('Tag','popup_down_gldas_model'),'Value'); % get all required settings
+                    output_path = get(findobj('Tag','push_down_gldas_path'),'UserData');
+                    start_calc = datenum(str2double(get(findobj('Tag','edit_down_time_start_year'),'String')),... % Get date of start
+                        str2double(get(findobj('Tag','edit_down_time_start_month'),'String')),...
+                        str2double(get(findobj('Tag','edit_down_time_start_day'),'String')),...
+                        str2double(get(findobj('Tag','edit_down_time_start_hour'),'String')),0,0);
+                    end_calc = datenum(str2double(get(findobj('Tag','edit_down_time_end_year'),'String')),... % Get date of end
+                        str2double(get(findobj('Tag','edit_down_time_end_month'),'String')),...
+                        str2double(get(findobj('Tag','edit_down_time_end_day'),'String')),...
+                        str2double(get(findobj('Tag','edit_down_time_end_hour'),'String')),0,0);
+                    step_calc = get(findobj('Tag','popup_down_time_step'),'Value'); % Get time step
+                    if start_calc > end_calc                                    % check valid settings and perform conversion
+                        set(findobj('Tag','text_status'),'String','Start time must be <= End time');
+                    else
+                        set(findobj('Tag','text_status'),'String','Models: Starting the conversion...');drawnow
+                        if model_version <=6 
+%                             mGlobe_download_GLDAS(start_calc,end_calc,model_version,step_calc,output_path); % OLD FUNCTION. Not compatible with new GLDAS data policy. download+convert GLDAS data
+                            mGlobe_convert_GLDAS(start_calc,end_calc,model_version,step_calc,output_path,input_path,input_file);
+                        end
+                        set(findobj('Tag','text_status'),'String','Conversion completed');
+                        pause(5);
+                        set(findobj('Tag','text_status'),'String','Set your conversion options');
                     end
-                    set(findobj('Tag','text_status'),'String','Downloading completed');
-                    pause(5);
-                    set(findobj('Tag','text_status'),'String','Set your download/conversion options');
                 end
             % ERA    
             case 'load_down_era_input'                                     
@@ -1561,7 +1569,7 @@ function mGlobe(in_switch)
                     set(findobj('Tag','text_status'),'String','Models: conversion starting...');drawnow
                     mGlobe_convert_ERA(start_calc,end_calc,step_calc,input_file,output_path) % covert ERA model
                     pause(5);
-                    set(findobj('Tag','text_status'),'String','Set your download/conversion options');
+                    set(findobj('Tag','text_status'),'String','Set your conversion options');
                 else
                     set(findobj('Tag','text_status'),'String','Please choose your ERA netCDF input file');
                 end
@@ -1584,7 +1592,7 @@ function mGlobe(in_switch)
                     set(findobj('Tag','text_status'),'String','Models: conversion starting...');drawnow
                     mGlobe_convert_NCEP(start_calc,end_calc,step_calc,input_path,output_path) % covert ERA model
                     pause(5);
-                    set(findobj('Tag','text_status'),'String','Set your download/conversion options');
+                    set(findobj('Tag','text_status'),'String','Set your conversion options');
                 else
                     set(findobj('Tag','text_status'),'String','Please choose your NCEP netCDF input file.');
                 end
@@ -1615,7 +1623,7 @@ function mGlobe(in_switch)
                     set(findobj('Tag','text_status'),'String','Models: Starting conversion...');drawnow
                     mGlobe_convert_DEM(DEM_input,DEM_output,DEM_type); 		% perform transformation
                     pause(5);
-                    set(findobj('Tag','text_status'),'String','Set your download/conversion options');
+                    set(findobj('Tag','text_status'),'String','Set your conversion options');
                 else
                     set(findobj('Tag','text_status'),'String','Choose your input and output DEM file');
                 end
@@ -1658,7 +1666,7 @@ function mGlobe(in_switch)
                     mGlobe_convert_OTHER(start_calc,end_calc,step_calc,input_name,input_path,output_path,file_type,header_lines);
                     set(findobj('Tag','text_status'),'String','Models: Conversion completed');
                     pause(5);
-                    set(findobj('Tag','text_status'),'String','Set your download/conversion options');
+                    set(findobj('Tag','text_status'),'String','Set your conversion options');
                 else
                     set(findobj('Tag','text_status'),'String','Please choose your (correct) input file');
                 end
@@ -1713,7 +1721,7 @@ function mGlobe(in_switch)
                     mGlobe_convert_GRACE_tellus(start_calc,end_calc,file_path,output_name,'GRACE',ocean_land,scale_file); % convert GRACE model
                     set(findobj('Tag','text_status'),'String','Conversion completed');
                     pause(5);
-                    set(findobj('Tag','text_status'),'String','Set your download/conversion options');
+                    set(findobj('Tag','text_status'),'String','Set your conversion options');
                 else
                     set(findobj('Tag','text_status'),'String','Please choose your (valid) TELLUS GRACE netCDF input file');
                 end
