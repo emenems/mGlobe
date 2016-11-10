@@ -110,8 +110,9 @@ for j = 1:length(model_calc);												% loop for each model
             % Input
             Input = [sites{1,3}(i),sites{1,2}(i),sites{1,4}(i)];            % input coordinates
 
-            % Compute
-            cd(mglobe_folder)                                               % change folder to mGlobe
+            % change folder to mGlobe
+            cd(mglobe_folder)                                               
+			% load DEM to check if it contains point of computation
             if ~isempty(DEM_file)	
                 if ~exist('dem','var')
                     dem = importdata(DEM_file);
@@ -124,8 +125,10 @@ for j = 1:length(model_calc);												% loop for each model
                     curr_DEM = DEM_file;                                    % otherwise use given DEM
                 end
             else
+				curr_DEM = [];
                 Input(3) = 0;                                               % set height to zero if DEM not loaded
             end
+			% Compute
             mGlobe_calc_Hydro(Input,output_file,output_file_type,curr_DEM,start_calc,end_calc,step_calc,exclude_calc,model_calc(j),model_layer,mass_conserv,ghc_treshold,ghc_path,subtract_average,INCLUDE_file)
             clear Input output_file curr_DEM                                        % remove used variables
             cd(currentFolder);                                              % change folder back

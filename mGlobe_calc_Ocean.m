@@ -517,6 +517,7 @@ if sum(sum(abs(dgE(~isnan(dgE))))) > 0
         dgP_write(row_id_nan == 1) = 1234567.89;
         sum_for_tsf = total_write;
         sum_for_tsf(row_id_nan == 1) = 1234567.89;
+		mean_value(row_id_nan == 1) = 1234567.89;
         fprintf(fid,'[TIMEFORMAT] DATETIME\n\n');
         fprintf(fid,'[INCREMENT] %8.3f\n\n',time_resol_in_days*24*60*60);
         fprintf(fid,'[CHANNELS]\n');
