@@ -117,8 +117,8 @@ delta_zone5 = 0.00004*memory_mult;
 tic                                                                         % start measuring the time
 
 %% Load orography
-switch file_ref(end-2:end)                                                  % switch between HDF and NetCDF file format
-    case 'hdf'
+                                                 % switch between HDF and NetCDF file format
+if strcmp(file_ref(end-2:end),'hdf')
         orography.height = hdfread(file_ref,'PHIS');                                % read hdf file containing MERRA orography
         orography.height(orography.height>1000000) = NaN;                           % set flagged values to NaN (no flagged values are expected though)
         orography.height = double(orography.height)./9.80665;                       % convert to m  
@@ -126,17 +126,17 @@ switch file_ref(end-2:end)                                                  % sw
         orography.lat = hdfread(file_ref,'YDim:EOSGRID');                           % latitude vector
         [orography.lon,orography.lat] = meshgrid(double(orography.lon),double(orography.lat)); % vectors to matrices
         delta_ghm = [abs(orography.lon(1,1)-orography.lon(1,2)) abs(orography.lat(1,1)-orography.lat(2,1))]; % determine model resolution (used only for output file)
-    case '.nc'
+elseif strcmp(file_ref(end-2:end),'.nc') || strcmp(file_ref(end-2:end),'nc4')
         ncid_ref = netcdf.open(file_ref,'NC_NOWRITE');                              % open given netCDF files
-        [ndims,nvars] = netcdf.inq(ncid_ref);                                       % get variable names
+        [~,nvars] = netcdf.inq(ncid_ref);                                       % get variable names
         for nc = 1:nvars                                                            % load required layers
             varname = netcdf.inqVar(ncid_ref,nc-1);                                 
-            switch varname
-                case 'XDim'
+            switch lower(varname)
+                case 'xdim'
                     orography.lon = netcdf.getVar(ncid_ref,nc-1,'double');          % get longitude
-                case 'YDim'
+                case 'ydim'
                     orography.lat = netcdf.getVar(ncid_ref,nc-1,'double');          % get latitude
-                case 'PHIS'
+                case 'phis'
                     orography.height = netcdf.getVar(ncid_ref,nc-1,'double');         % get orography
                     try
                         scale_factor = netcdf.getAtt(ncid_ref,nc-1,'scale_factor'); % check if scaling factor does exist
@@ -158,7 +158,7 @@ end
 
 %% LOAD OTHER DATA
 for i = 1:size(time,1)
-    check_out = 0;                                                          % control variable
+    check_out = 0;      
     try
         ncid_temp = netcdf.open([file_temp(1:end-15),sprintf('%04d%02d%02d.SUB.nc',time(i,1),time(i,2),time(i,3))],'NC_NOWRITE'); % open temperature file
         ncid_humid = netcdf.open([file_humid(1:end-15),sprintf('%04d%02d%02d.SUB.nc',time(i,1),time(i,2),time(i,3))],'NC_NOWRITE'); % open humidity file
@@ -175,180 +175,254 @@ for i = 1:size(time,1)
     
     if check_out == 0
     %% LOAD TEMPERATURE DATA
-    [ndims,nvars] = netcdf.inq(ncid_temp);                                  % get layers info
+    [~,nvars] = netcdf.inq(ncid_temp);                                  % get layers info
     for nc = 1:nvars
         varname = netcdf.inqVar(ncid_temp,nc-1);                            % get layer names
-        switch varname
-            case 'longitude'                
+        switch lower(varname)
+            case 'longitude'   % old version             
+                temperature.lon = netcdf.getVar(ncid_temp,nc-1,'double');   % create longitude variable (vector)
+            case 'xdim'        % new netcdf version      
                 temperature.lon = netcdf.getVar(ncid_temp,nc-1,'double');   % create longitude variable (vector)
             case 'latitude'
                 temperature.lat = netcdf.getVar(ncid_temp,nc-1,'double');   % create latitude variable (vector)
+            case 'ydim'
+                temperature.lat = netcdf.getVar(ncid_temp,nc-1,'double');   % create latitude variable (vector)
             case 'time'
                 temperature.time = netcdf.getVar(ncid_temp,nc-1,'double');  % get time info (vector)
-                rid = find(temperature.time == time(i,4));
-            case 'levels'
+                % Check input time step (either in hours or minutes)
+                if temperature.time(end) > 24
+                    rid = find(temperature.time == time(i,4)*60);
+                else
+                    rid = find(temperature.time == time(i,4));
+                end
+            case 'levels'       % old netcdf version
                 temperature.level = netcdf.getVar(ncid_temp,nc-1,'double');
                 temperature.level = flipud(temperature.level);              % flip upside down to obtain the same format as ERA = pressure levels are increasing
+            case 'height'       % new netcdf version
+                temperature.level = netcdf.getVar(ncid_temp,nc-1,'double');
+                temperature.level = flipud(temperature.level);
             case 't'
-                if ~isempty(rid)
+                if exist('rid','var') ~=0
                     temperature.data = netcdf.getVar(ncid_temp,nc-1,[0 0 0 rid-1],[length(temperature.lon) length(temperature.lat) length(temperature.level) 1],'double'); % create temperature field
                     temperature.data = permute(temperature.data,[2 1 3]); % permute the 4D matrix to required format
                     temperature.data = flipdim(temperature.data,3);         % flip upside down to obtain the same format as ERA
                     temperature.data(temperature.data>=1.0e+14) = NaN;      % remove flagged values
                 else
-                    out_message = sprintf('MERRA Temperature: data for %04d/%02d/%02d %02dh not found',time(i,1),time(i,2),time(i,3),time(i,4)); % create warning message
-                    set(findobj('Tag','text_status'),'String',out_message); drawnow % write the warning message
-                    fprintf([out_message,'\n']);                            % send message to command line
-                    check_out = 1;                                          % change the 'check_out' value (>= 1...do not compute the gravity effect)
+                    % Store layer index for later loading (after loading
+                    % time layer needed to get correct indexing)
+                    t_nc = nc;
+                    check_out = 1;
                 end        
         end
+    end
+    if exist('t_nc','var') == 1
+        temperature.data = netcdf.getVar(ncid_temp,t_nc-1,[0 0 0 rid-1],[length(temperature.lon) length(temperature.lat) length(temperature.level) 1],'double'); % create temperature field
+        temperature.data = permute(temperature.data,[2 1 3]); % permute the 4D matrix to required format
+        temperature.data = flipdim(temperature.data,3);         % flip upside down to obtain the same format as ERA
+        temperature.data(temperature.data>=1.0e+14) = NaN;      % remove flagged values
+        clear t_nc
+        check_out = 0;
     end
     [temperature.lon,temperature.lat] = meshgrid(temperature.lon,temperature.lat); % create the lon/lat matrices
     netcdf.close(ncid_temp);                                                % close the netcdf temperature file
     clear ndims nvars nc add_offset scale_factor rid varname                % remove used variables
     
     %% LOAD SPECIFIC HUMIDITY DATA
-    [ndims,nvars] = netcdf.inq(ncid_humid);                                 % for details see temperature loading
+    [~,nvars] = netcdf.inq(ncid_humid);                                 % for details see temperature loading
     for nc = 1:nvars
         varname = netcdf.inqVar(ncid_humid,nc-1);
-        switch varname
+        switch lower(varname)
             case 'longitude'
+                humidity.lon = netcdf.getVar(ncid_humid,nc-1,'double');
+            case 'xdim'
                 humidity.lon = netcdf.getVar(ncid_humid,nc-1,'double');
             case 'latitude'
                 humidity.lat = netcdf.getVar(ncid_humid,nc-1,'double');
+            case 'ydim'
+                humidity.lat = netcdf.getVar(ncid_humid,nc-1,'double');
             case 'time'
                 humidity.time = netcdf.getVar(ncid_humid,nc-1,'double');
-                rid = find(humidity.time == time(i,4));
+                if humidity.time(end) > 24
+                    rid = find(humidity.time == time(i,4)*60);
+                else
+                    rid = find(humidity.time == time(i,4));
+                end
             case 'levels'
                 humidity.level = netcdf.getVar(ncid_humid,nc-1,'double');
                 humidity.level = flipud(humidity.level);
+            case 'height'
+                humidity.level = netcdf.getVar(ncid_humid,nc-1,'double');
+                humidity.level = flipud(humidity.level);
             case 'qv'
-                if ~isempty(rid)
+                if exist('rid','var') ~=0
                     humidity.data = netcdf.getVar(ncid_humid,nc-1,[0 0 0 rid-1],[length(humidity.lon) length(humidity.lat) length(humidity.level) 1],'double');
                     humidity.data = permute(humidity.data,[2 1 3]); 
                     humidity.data = flipdim(humidity.data,3);
                     humidity.data(humidity.data>=1.0e+14) = NaN;            % flagged values
                 else
-                    out_message = sprintf('MERRA Specific Humidity: data for %04d/%02d/%02d %02dh not found',time(i,1),time(i,2),time(i,3),time(i,4));
-                    set(findobj('Tag','text_status'),'String',out_message); drawnow
-                    fprintf([out_message,'\n']);
+                    t_nc = nc;
                     check_out = 1;
                 end 
         end
+    end
+    if exist('t_nc','var') == 1
+        humidity.data = netcdf.getVar(ncid_humid,t_nc-1,[0 0 0 rid-1],[length(humidity.lon) length(humidity.lat) length(humidity.level) 1],'double');
+        humidity.data = permute(humidity.data,[2 1 3]); 
+        humidity.data = flipdim(humidity.data,3);
+        humidity.data(humidity.data>=1.0e+14) = NaN;            % flagged values
+        clear t_nc
+        check_out = 0;
     end
     [humidity.lon,humidity.lat] = meshgrid(humidity.lon,humidity.lat);
     netcdf.close(ncid_humid);
     clear ndims nvars nc add_offset scale_factor rid varname
     
     %% LOAD GEOPOTENTIAL DATA
-    [ndims,nvars] = netcdf.inq(ncid_height);                                % for details see temperature loading
+    [~,nvars] = netcdf.inq(ncid_height);                                % for details see temperature loading
     for nc = 1:nvars
         varname = netcdf.inqVar(ncid_height,nc-1);
-        switch varname
+        switch lower(varname)
             case 'longitude'
+                height.lon = netcdf.getVar(ncid_height,nc-1,'double');
+            case 'xdim'
                 height.lon = netcdf.getVar(ncid_height,nc-1,'double');
             case 'latitude'
                 height.lat = netcdf.getVar(ncid_height,nc-1,'double');
+            case 'ydim'
+                height.lat = netcdf.getVar(ncid_height,nc-1,'double');
             case 'time'
                 height.time = netcdf.getVar(ncid_height,nc-1,'double');
-                rid = find(height.time == time(i,4));
+                if height.time(end) > 24
+                    rid = find(height.time == time(i,4)*60);
+                else
+                    rid = find(height.time == time(i,4));
+                end
             case 'levels'
                 height.level = netcdf.getVar(ncid_height,nc-1,'double');
                 height.level = flipud(height.level);
+            case 'height'
+                height.level = netcdf.getVar(ncid_height,nc-1,'double');
+                height.level = flipud(height.level);
             case 'h'
-                if ~isempty(rid)
+                if exist('rid','var') ~=0
                     height.data = netcdf.getVar(ncid_height,nc-1,[0 0 0 rid-1],[length(height.lon) length(height.lat) length(height.level) 1],'double');
                     height.data = permute(height.data,[2 1 3]); % Do not divide by 9.8... (already in metres)
                     height.data = flipdim(height.data,3);
                     height.data(height.data>=1.0e+14) = NaN;                % 
-                    
                 else
-                    out_message = sprintf('MERRA Geopotential height: data for %04d/%02d/%02d %02dh not found',time(i,1),time(i,2),time(i,3),time(i,4));
-                    set(findobj('Tag','text_status'),'String',out_message); drawnow
-                    fprintf([out_message,'\n']);
+                    t_nc = nc;
                     check_out = 1;
                 end   
         end
+    end
+    if exist('t_nc','var') == 1
+        height.data = netcdf.getVar(ncid_height,t_nc-1,[0 0 0 rid-1],[length(height.lon) length(height.lat) length(height.level) 1],'double');
+        height.data = permute(height.data,[2 1 3]); % Do not divide by 9.8... (already in metres)
+        height.data = flipdim(height.data,3);
+        height.data(height.data>=1.0e+14) = NaN;                % 
+        clear t_nc
+        check_out = 0;
     end
     [height.lon,height.lat] = meshgrid(height.lon,height.lat);
     netcdf.close(ncid_height);
     clear ndims nvars nc add_offset scale_factor rid varname
     
     %% LOAD SURFACE PRESSURE
-    [ndims,nvars] = netcdf.inq(ncid_sp);                                    % for details see temperature loading
+    [~,nvars] = netcdf.inq(ncid_sp);                                    % for details see temperature loading
     for nc = 1:nvars
         varname = netcdf.inqVar(ncid_sp,nc-1);
-        switch varname
+        switch lower(varname)
             case 'longitude'
+                surface.lon = netcdf.getVar(ncid_sp,nc-1,'double');
+            case 'xdim'
                 surface.lon = netcdf.getVar(ncid_sp,nc-1,'double');
             case 'latitude'
                 surface.lat = netcdf.getVar(ncid_sp,nc-1,'double');
+            case 'ydim'
+                surface.lat = netcdf.getVar(ncid_sp,nc-1,'double');
             case 'time'
                 surface.time = netcdf.getVar(ncid_sp,nc-1,'double');
-                rid = find(surface.time == time(i,4));
+                if surface.time(end) > 24
+                    rid = find(surface.time == time(i,4)*60);
+                else
+                    rid = find(surface.time == time(i,4));
+                end
             case 'ps'                                                       % surface pressure
-                if ~isempty(rid)
+                if exist('rid','var') ~=0
                     surface.pressure = netcdf.getVar(ncid_sp,nc-1,[0 0 rid-1],[length(surface.lon) length(surface.lat) 1],'double');
                     surface.pressure = surface.pressure';
                     surface.pressure(surface.pressure>=1.0e+10) = NaN;                % 
                 else
-                    out_message = sprintf('MERRA Surface Pressure: data for %04d/%02d/%02d %02dh not found',time(i,1),time(i,2),time(i,3),time(i,4));
-                    set(findobj('Tag','text_status'),'String',out_message); drawnow
-                    fprintf([out_message,'\n']);
+                    t_nc = nc;
                     check_out = 1;
                 end   
         end
+    end
+    if exist('t_nc','var') == 1
+        surface.pressure = netcdf.getVar(ncid_sp,t_nc-1,[0 0 rid-1],[length(surface.lon) length(surface.lat) 1],'double');
+        surface.pressure = surface.pressure';
+        surface.pressure(surface.pressure>=1.0e+10) = NaN;                % 
+        clear t_nc
+        check_out = 0;
     end
     [surface.lon,surface.lat] = meshgrid(surface.lon,surface.lat);
     netcdf.close(ncid_sp);
     clear ndims nvars nc add_offset scale_factor rid varname
     
     %% LOAD SURFACE TEMP/HUMID/DENSITY
-    [ndims,nvars] = netcdf.inq(ncid_stdh);                                    % for details see temperature loading
+    [~,nvars] = netcdf.inq(ncid_stdh);                                    % for details see temperature loading
     for nc = 1:nvars
         varname = netcdf.inqVar(ncid_stdh,nc-1);
-        switch varname
+        switch lower(varname)
             case 'longitude'
+                surface.lon = netcdf.getVar(ncid_stdh,nc-1,'double');
+            case 'xdim'
                 surface.lon = netcdf.getVar(ncid_stdh,nc-1,'double');
             case 'latitude'
                 surface.lat = netcdf.getVar(ncid_stdh,nc-1,'double');
+            case 'ydim'
+                surface.lat = netcdf.getVar(ncid_stdh,nc-1,'double');
             case 'time'
                 surface.time = netcdf.getVar(ncid_stdh,nc-1,'double');
-                rid = find(surface.time == time(i,4));
+                if surface.time(end) > 24
+                    rid = find(surface.time == time(i,4)*60);
+                else
+                    rid = find(surface.time == time(i,4));
+                end
             case 'tlml'                                                     % surface/lowest level temperature
-                if ~isempty(rid)
+                if exist('rid','var') ~=0 && numel(surface.lat)<1500 && numel(surface.lon)<1500 % additional check if time and XDim/YDim have been loaded
                     surface.temperature = netcdf.getVar(ncid_stdh,nc-1,[0 0 rid-1],[length(surface.lon) length(surface.lat) 1],'double');
                     surface.temperature = surface.temperature';
                 else
-                    out_message = sprintf('MERRA Surface temperature: data for %04d/%02d/%02d %02dh not found',time(i,1),time(i,2),time(i,3),time(i,4));
-                    set(findobj('Tag','text_status'),'String',out_message); drawnow
-                    fprintf([out_message,'\n']);
+                    t_nc = nc;
                     check_out = 1;
-                end   
-%             case 'rhoa'                                                     % surface/lowest level air density
-%                 if ~isempty(rid)
-%                     surface.density = netcdf.getVar(ncid_stdh,nc-1,[0 0 rid-1],[length(surface.lon) length(surface.lat) 1],'double');
-%                     surface.density = surface.density';
-%                 else
-%                     out_message = sprintf('MERRA Surface density: data for %04d/%02d/%02d %02dh not found',time(i,1),time(i,2),time(i,3),time(i,4));
-%                     set(findobj('Tag','text_status'),'String',out_message); drawnow
-%                     fprintf([out_message,'\n']);
-%                     check_out = 1;
-%                 end
+                end    
             case 'qlml'                                                     % surface/lowest level humidity
-                if ~isempty(rid)
+                if exist('rid','var') ~=0 && numel(surface.lat)<1500 && numel(surface.lon)<1500
                     surface.humidity = netcdf.getVar(ncid_stdh,nc-1,[0 0 rid-1],[length(surface.lon) length(surface.lat) 1],'double');
                     surface.humidity = surface.humidity';
                     surface.humidity(surface.humidity>=1.0e+10) = NaN;      
                 else
-                    out_message = sprintf('MERRA Surface humidity: data for %04d/%02d/%02d %02dh not found',time(i,1),time(i,2),time(i,3),time(i,4));
-                    set(findobj('Tag','text_status'),'String',out_message); drawnow
-                    fprintf([out_message,'\n']);
+                    h_nc = nc;
                     check_out = 1;
                 end   
         end
     end
-    [surface.lon,surface.lat] = meshgrid(surface.lon,surface.lat);
+    if numel(surface.lat)<1500 && numel(surface.lon)<1500
+        [surface.lon,surface.lat] = meshgrid(surface.lon,surface.lat);
+    end
+    if exist('t_nc','var') == 1
+        surface.temperature = netcdf.getVar(ncid_stdh,t_nc-1,[0 0 rid-1],[size(surface.lon,2) size(surface.lat,1) 1],'double');
+        surface.temperature = surface.temperature';
+        clear t_nc
+    end
+    if exist('h_nc','var') == 1
+        surface.humidity = netcdf.getVar(ncid_stdh,h_nc-1,[0 0 rid-1],[size(surface.lon,2) size(surface.lat,1) 1],'double');
+        surface.humidity = surface.humidity';
+        surface.humidity(surface.humidity>=1.0e+10) = NaN;   
+        clear h_nc
+        check_out = 0;
+    end
     netcdf.close(ncid_stdh);
     clear ndims nvars nc add_offset scale_factor rid varname
     
