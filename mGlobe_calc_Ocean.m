@@ -141,9 +141,10 @@ end
 if model_version == 3                                                       % special time treatment for GRACE data (=unequally spaced)
     clear time
     try
-    cd(fullfile('GRACE','OCEAN'));
-    file_count = dir([ghc_path(end-21:end),'*.mat']);                       % find files in GRACE folder with given PREFIX in *.mat format
-    cd(fullfile('..','..'));
+    curfolder = pwd;
+    cd(fileparts(ghc_path));
+    file_count = dir([ghc_path(end-21:end),'*.mat']);                       % find files in GRACE folder with given PREFIX in mat format
+    cd(curfolder);
     if isempty(file_count)
         time(1,:) = [9999,9999,9999,9999,9999,9999,9999];
     else

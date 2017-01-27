@@ -39,28 +39,9 @@ function mGlobe(in_switch)
 %   mGlobe_DATA_dgE_Hydro.txt
 %   mGlobe_DATA_OceanGrid.mat
 %   mGlobe_DATA_Load_degree_k.txt
+%   mGlobe_PATH_Settings.txt
 % 
-% The mGlobe works in the following path structure:
-% /mGlobe
-%        /GHM
-%           /CLM
-%           /ERA
-%           /MERRA
-%           /MOS
-%           /NOAH025
-%           /NOAH10
-%           /NCEP
-%           /OTHER
-%           /VIC
-%       /GRACE
-%           /LAND
-%           /OCEAN
-%       /OBPM
-%           /ECCO1
-%           /OTHER
-%           /ECCO2                                                          % (beta)
-%           /OMCT
-% 
+% See mGlobe_USER_MANUAL.pdf for details
 % 
 % System requirements:
 %   MATLAB R2012a or later
@@ -70,8 +51,6 @@ function mGlobe(in_switch)
 % 
 % 
 %                                         M.Mikolaj, mikolaj@gfz-potsdam.de
-%                                                                06.04.2015
-%                                                                      v1.0
 
     if nargin == 0
 %% GUI
@@ -933,7 +912,7 @@ function mGlobe(in_switch)
                     'Style','Text','units','characters',...
                     'String','Paht:','UserData',fullfile('OBPM'),...
                     'Tag','push_ocean_convert_output');
-        uicontrol(p5_3,'units','characters','Position',[69,0.238+3.8,17,1.769],...
+        uicontrol(p5_3,'units','characters','Position',[69,0.238+3.8,28,1.769],...
                     'Style','Text','Tag','text_ocean_convert_output',...
                     'String','/OBPM/ECCO1/','UserData',fullfile('OBPM','ECCO1'));
         uicontrol(p5_3,'units','characters','Position',[1.45,1.9,15.25,1.769],...
@@ -1000,7 +979,10 @@ function mGlobe(in_switch)
         uicontrol(p5_4,'units','characters','Position',[28 0.231 22.8 1.692],...
                     'Style','Checkbox','Tag','check_ocean_average',...
                     'String','subtract average','Value',0);
-            
+        % Set model paths
+        mGlobe('select_hydro_model');
+        mGlobe('select_down_model');
+        mGlobe('popup_ocean_model');
         % END GUI
         end
 %% Button response
@@ -1070,57 +1052,45 @@ function mGlobe(in_switch)
                 set(findobj('Tag','text_status'),'String','Set your non-tidal ocean effect');
             %% HYROLOGICAL EFFECT
             case 'select_hydro_model'                                       % change the shown path according to selected model
+                % Read path set file
+                [ghm_main,~,grace_main] = mGlobe_getModelPath;
+                ghm_path = {fullfile(ghm_main,'CLM'),fullfile(ghm_main,'MOS'),...
+                            fullfile(ghm_main,'NOAH025'),fullfile(ghm_main,'NOAH10'),...
+                            fullfile(ghm_main,'VIC'),fullfile(ghm_main,'ERA'),fullfile(ghm_main,'MERRA'),...
+                            fullfile(ghm_main,'OTHER'),fullfile(grace_main,'LAND'),fullfile(ghm_main,'NCEP')};
                 val = get(findobj('Tag','popup_hydro_model'),'Value');
+                set(findobj('Tag','push_hydro_model_path'),'UserData',ghm_path{val}); % each button stores data about the path to model data
+                set(findobj('Tag','text_hydro_model_path'),'String',ghm_path{val}); % show path for current model
+                set(findobj('Tag','popup_hydro_model_layer'),'Value',1); % always set the layer to 'total' (by default)
+                set(findobj('Tag','push_down_other_path'),'UserData',fullfile(ghm_main,'OTHER'));
+                set(findobj('Tag','text_down_other_path'),'String',fullfile(ghm_main,'OTHER'));
+                if val == 6
+                    set(findobj('Tag','push_down_era_path'),'UserData',fullfile(ghm_main,'ERA'));
+                    set(findobj('Tag','text_down_era_path'),'String',fullfile(ghm_main,'ERA'));
+                else
+                    set(findobj('Tag','push_down_era_path'),'UserData',fullfile(ghm_main,'NCEP'));
+                    set(findobj('Tag','text_down_era_path'),'String',fullfile(ghm_main,'NCEP'));
+                end
                 switch val
                     case 1
-                        set(findobj('Tag','push_hydro_model_path'),'UserData',fullfile('GHM','CLM')); % each button stores data about the path to model data
-                        set(findobj('Tag','text_hydro_model_path'),'String','/GHM/CLM/'); % show path for current model
-                        set(findobj('Tag','popup_hydro_model_layer'),'Value',1); % always set the layer to 'total' (by default)
                         set(findobj('Tag','popup_hydro_model_layer'),'String','total|soilm1|soilm2|soilm3|soilm4|soilm5|soilm6|soilm7|soilm8|soilm9|soilm10|swe'); % show different layers for different models
                     case 2
-                        set(findobj('Tag','push_hydro_model_path'),'UserData',fullfile('GHM','MOS'));
-                        set(findobj('Tag','text_hydro_model_path'),'String','/GHM/MOS/');
-                        set(findobj('Tag','popup_hydro_model_layer'),'Value',1);
                         set(findobj('Tag','popup_hydro_model_layer'),'String','total|soilm1|soilm2|soilm3|swe');
                     case 3
-                        set(findobj('Tag','push_hydro_model_path'),'UserData',fullfile('GHM','NOAH025'));
-                        set(findobj('Tag','text_hydro_model_path'),'String','/GHM/NOAH025/');
-                        set(findobj('Tag','popup_hydro_model_layer'),'Value',1);
                         set(findobj('Tag','popup_hydro_model_layer'),'String','total|soilm1|soilm2|soilm3|soilm4|swe');
                     case 4
-                        set(findobj('Tag','push_hydro_model_path'),'UserData',fullfile('GHM','NOAH10'));
-                        set(findobj('Tag','text_hydro_model_path'),'String','/GHM/NOAH10/');
-                        set(findobj('Tag','popup_hydro_model_layer'),'Value',1);
                         set(findobj('Tag','popup_hydro_model_layer'),'String','total|soilm1|soilm2|soilm3|soilm4|swe');
                     case 5
-                        set(findobj('Tag','push_hydro_model_path'),'UserData',fullfile('GHM','VIC'));
-                        set(findobj('Tag','text_hydro_model_path'),'String','/GHM/VIC/');
-                        set(findobj('Tag','popup_hydro_model_layer'),'Value',1);
                         set(findobj('Tag','popup_hydro_model_layer'),'String','total|soilm1|soilm2|soilm3|swe');
                     case 6
-                        set(findobj('Tag','push_hydro_model_path'),'UserData',fullfile('GHM','ERA'));
-                        set(findobj('Tag','text_hydro_model_path'),'String','/GHM/ERA/');
-                        set(findobj('Tag','popup_hydro_model_layer'),'Value',1);
                         set(findobj('Tag','popup_hydro_model_layer'),'String','total|swvl1|swvl2|swvl3|swvl4|sd');
                     case 7
-                        set(findobj('Tag','push_hydro_model_path'),'UserData',fullfile('GHM','MERRA'));
-                        set(findobj('Tag','text_hydro_model_path'),'String','/GHM/MERRA/');
-                        set(findobj('Tag','popup_hydro_model_layer'),'Value',1);
                         set(findobj('Tag','popup_hydro_model_layer'),'String','total (twland)');
                     case 8
-                        set(findobj('Tag','push_hydro_model_path'),'UserData',fullfile('GHM','OTHER'));
-                        set(findobj('Tag','text_hydro_model_path'),'String','/GHM/OTHER/');
-                        set(findobj('Tag','popup_hydro_model_layer'),'Value',1);
                         set(findobj('Tag','popup_hydro_model_layer'),'String','total');
                     case 9
-                        set(findobj('Tag','push_hydro_model_path'),'UserData',fullfile('GRACE','LAND'));
-                        set(findobj('Tag','text_hydro_model_path'),'String','/GRACE/LAND/');
-                        set(findobj('Tag','popup_hydro_model_layer'),'Value',1);
                         set(findobj('Tag','popup_hydro_model_layer'),'String','total');
                     case 10
-                        set(findobj('Tag','push_hydro_model_path'),'UserData',fullfile('GHM','NCEP'));
-                        set(findobj('Tag','text_hydro_model_path'),'String','/GHM/NCEP/');
-                        set(findobj('Tag','popup_hydro_model_layer'),'Value',1);
                         set(findobj('Tag','popup_hydro_model_layer'),'String','total|soilw1|soilw2|weasd');
                 end
             case 'load_hydro_dem'                                          % Load DEM for Hydro effect (Continental water storage)
@@ -1224,7 +1194,7 @@ function mGlobe(in_switch)
                 name = 1;
                 if model_calc == 8                                          % prompt user to pick OTHER model (fixed prefix)
                     set(findobj('Tag','text_status'),'String','You have chosen OTHER model => pick file with *.mat grid, first TEN letters will be used as a PREFIX (e.g. WGHM05_All)');
-                    [name,path] = uigetfile(fullfile('GHM','OTHER'),'Pick file with *.mat grid, first TEN letters will be used as a PREFIX123 for data loading (e.g. WGHM05_All)');
+                    [name,~] = uigetfile(ghc_path,'Pick file with *.mat grid, first TEN letters will be used as a PREFIX123 for data loading (e.g. WGHM05_All)');
                     if name ~=0                                             % some file name is expected
                         ghc_path = fullfile(ghc_path,name(1:10));           % create new input file prefix = path + file prefix
                         set(findobj('Tag','text_status'),'String',['File path + prefix = ',ghc_path]); % send to status line
@@ -1235,7 +1205,7 @@ function mGlobe(in_switch)
                 
                 if model_calc == 9                                          % prompt user to pick GRACE model (prefix will be determined)
                     set(findobj('Tag','text_status'),'String','You have chosen GRACE model => pick file with *.mat grid, first 22 letters will be used as a PREFIX (e.g. GRC_GFZ_RL05_FILT0_CON))');
-                    [name,path] = uigetfile(fullfile('GRACE','LAND'),'Pick file with *.mat GRACE grid, first 22 letters will be used as a PREFIX (e.g. GRC_GFZ_RL05_FILT0_CON)');
+                    [name,~] = uigetfile(fullfile(ghc_path),'Pick file with *.mat GRACE grid, first 22 letters will be used as a PREFIX (e.g. GRC_GFZ_RL05_FILT0_CON)');
                     if name ~=0                                             % some file name is expected
                         ghc_path = fullfile(ghc_path,name(1:22));           % create new input file prefix = path + file prefix
                         set(findobj('Tag','text_status'),'String',['File path + prefix = ',ghc_path]);
@@ -1489,26 +1459,27 @@ function mGlobe(in_switch)
             %%  CONVERT
             % GLDAS
             case 'select_down_model'
+                [ghm_main,~,~] = mGlobe_getModelPath;
                 val = get(findobj('Tag','popup_down_gldas_model'),'Value'); % get GLDAS model version
                 switch val                                                  % switch output path according to the selected model version
                     case 1
-                        set(findobj('Tag','push_down_gldas_path'),'UserData',fullfile('GHM','CLM'));
-                        set(findobj('Tag','text_down_gldas_path'),'String','/GHM/CLM/');
+                    set(findobj('Tag','push_down_gldas_path'),'UserData',fullfile(ghm_main,'CLM'));
+                        set(findobj('Tag','text_down_gldas_path'),'String',fullfile(ghm_main,'CLM'));
                     case 2
-                        set(findobj('Tag','push_down_gldas_path'),'UserData',fullfile('GHM','MOS'));
-                        set(findobj('Tag','text_down_gldas_path'),'String','/GHM/MOS/');
+                        set(findobj('Tag','push_down_gldas_path'),'UserData',fullfile(ghm_main,'MOS'));
+                        set(findobj('Tag','text_down_gldas_path'),'String',fullfile(ghm_main,'MOS'));
                     case 3
-                        set(findobj('Tag','push_down_gldas_path'),'UserData',fullfile('GHM','NOAH025'));
-                        set(findobj('Tag','text_down_gldas_path'),'String','/GHM/NOAH025/');
+                        set(findobj('Tag','push_down_gldas_path'),'UserData',fullfile(ghm_main,'NOAH025'));
+                        set(findobj('Tag','text_down_gldas_path'),'String',fullfile(ghm_main,'NOAH025'));
                     case 4
-                        set(findobj('Tag','push_down_gldas_path'),'UserData',fullfile('GHM','NOAH10'));
-                        set(findobj('Tag','text_down_gldas_path'),'String','/GHM/NOAH10/');
+                        set(findobj('Tag','push_down_gldas_path'),'UserData',fullfile(ghm_main,'NOAH10'));
+                        set(findobj('Tag','text_down_gldas_path'),'String',fullfile(ghm_main,'NOAH10'));
                     case 5
-                        set(findobj('Tag','push_down_gldas_path'),'UserData',fullfile('GHM','VIC'));
-                        set(findobj('Tag','text_down_gldas_path'),'String','/GHM/VIC/');
+                        set(findobj('Tag','push_down_gldas_path'),'UserData',fullfile(ghm_main,'VIC'));
+                        set(findobj('Tag','text_down_gldas_path'),'String',fullfile(ghm_main,'VIC'));
                     case 6
-                        set(findobj('Tag','push_down_gldas_path'),'UserData',fullfile('GHM','MERRA'));
-                        set(findobj('Tag','text_down_gldas_path'),'String','/GHM/MERRA/');
+                        set(findobj('Tag','push_down_gldas_path'),'UserData',fullfile(ghm_main,'MERRA'));
+                        set(findobj('Tag','text_down_gldas_path'),'String',fullfile(ghm_main,'MERRA'));
                 end
             case 'calc_down_gldas'
                 [name,path] = uigetfile('*.nc','Choose ONE input GLDAS or MERRA netCDF file'); % select ERA interim netcdf (*.nc) input file
@@ -1552,7 +1523,8 @@ function mGlobe(in_switch)
                     set(findobj('Tag','text_down_era_input'),'String',name);
                 end 
             case 'calc_down_era'
-                output_path = get(findobj('Tag','push_down_era_path'),'UserData');
+                [ghm_main,~,~] = mGlobe_getModelPath;
+                output_path = fullfile(ghm_main,'ERA');
                 start_calc = datenum(str2double(get(findobj('Tag','edit_down_time_start_year'),'String')),... % Get date of start
                     str2double(get(findobj('Tag','edit_down_time_start_month'),'String')),...
                     str2double(get(findobj('Tag','edit_down_time_start_day'),'String')),...
@@ -1574,7 +1546,8 @@ function mGlobe(in_switch)
                     set(findobj('Tag','text_status'),'String','Please choose your ERA netCDF input file');
                 end
             case 'calc_down_ncep'
-                output_path = fullfile('GHM','NCEP');
+                [ghm_main,~,~] = mGlobe_getModelPath;
+                output_path = fullfile(ghm_main,'NCEP');
                 start_calc = datenum(str2double(get(findobj('Tag','edit_down_time_start_year'),'String')),... % Get date of start
                     str2double(get(findobj('Tag','edit_down_time_start_month'),'String')),...
                     str2double(get(findobj('Tag','edit_down_time_start_day'),'String')),...
@@ -1718,7 +1691,8 @@ function mGlobe(in_switch)
                     set(findobj('Tag','text_status'),'String','Start time must be <= End time and Output PREFIX must have 22 letters exactly');
                 elseif ~isempty(input_file)
                     set(findobj('Tag','text_status'),'String','Models: conversion starting...');drawnow
-                    mGlobe_convert_GRACE_tellus(start_calc,end_calc,file_path,output_name,'GRACE',ocean_land,scale_file); % convert GRACE model
+                    [~,~,grace_main] = mGlobe_getModelPath;
+                    mGlobe_convert_GRACE_tellus(start_calc,end_calc,file_path,output_name,grace_main,ocean_land,scale_file); % convert GRACE model
                     set(findobj('Tag','text_status'),'String','Conversion completed');
                     pause(5);
                     set(findobj('Tag','text_status'),'String','Set your conversion options');
@@ -1797,22 +1771,23 @@ function mGlobe(in_switch)
                 
             case 'popup_ocean_model'                                        % switch between OBP models
                 val = get(findobj('Tag','popup_ocean_load_convert_model'),'Value');
+                [~,obpm_main,grace_main] = mGlobe_getModelPath;
                 switch val
                     case 1
-                        set(findobj('Tag','text_ocean_convert_output'),'UserData',fullfile('OBPM','ECCO1'));
-                        set(findobj('Tag','text_ocean_convert_output'),'String','/OBPM/ECCO1/');
+                        set(findobj('Tag','text_ocean_convert_output'),'UserData',fullfile(obpm_main,'ECCO1'));
+                        set(findobj('Tag','text_ocean_convert_output'),'String',fullfile(obpm_main,'ECCO1'));
                     case 2
-                        set(findobj('Tag','text_ocean_convert_output'),'UserData',fullfile('OBPM','OTHER'));
-                        set(findobj('Tag','text_ocean_convert_output'),'String','/OBPM/OTHER/');
+                        set(findobj('Tag','text_ocean_convert_output'),'UserData',fullfile(obpm_main,'OTHER'));
+                        set(findobj('Tag','text_ocean_convert_output'),'String',fullfile(obpm_main,'OTHER'));
                     case 3
-                        set(findobj('Tag','text_ocean_convert_output'),'UserData',fullfile('GRACE','OCEAN'));
-                        set(findobj('Tag','text_ocean_convert_output'),'String','/GRACE/OCEAN/');
+                        set(findobj('Tag','text_ocean_convert_output'),'UserData',fullfile(grace_main,'OCEAN'));
+                        set(findobj('Tag','text_ocean_convert_output'),'String',fullfile(grace_main,'OCEAN'));
                     case 4
-                        set(findobj('Tag','text_ocean_convert_output'),'UserData',fullfile('OBPM','ECCO2'));
-                        set(findobj('Tag','text_ocean_convert_output'),'String','/OBPM/ECCO2/');
+                        set(findobj('Tag','text_ocean_convert_output'),'UserData',fullfile(obpm_main,'ECCO2'));
+                        set(findobj('Tag','text_ocean_convert_output'),'String',fullfile(obpm_main,'ECCO2'));
                     otherwise
-                        set(findobj('Tag','text_ocean_convert_output'),'UserData',fullfile('OBPM','OMCT'));
-                        set(findobj('Tag','text_ocean_convert_output'),'String','/OBPM/OMCT/');
+                        set(findobj('Tag','text_ocean_convert_output'),'UserData',fullfile(obpm_main,'OMCT'));
+                        set(findobj('Tag','text_ocean_convert_output'),'String',fullfile(obpm_main,'OMCT'));
                 end
             case 'load_ocean_convert_calc'                                  % Convert ECCO1/2 ocean bottom pressure models to supported file format
                 file = get(findobj('Tag','push_ocean_load_convert_input'),'UserData');
@@ -1889,7 +1864,7 @@ function mGlobe(in_switch)
                 name = 1;
                 if model_version == 2                                       % prompt user to select OTHER model (fixed prefix is required)
                     set(findobj('Tag','text_status'),'String','You have chosen OTHER model => pick file with *.mat grid, first TEN letters will be used as a PREFIX (e.g. MODEL_1234)');
-                    [name,path] = uigetfile(fullfile('OBPM','OTHER'),'Pick file with *.mat grid, first TEN letters will be used as a PREFIX for data loading (e.g. MODEL_1234)');
+                    [name,~] = uigetfile(ghc_path,'Pick file with *.mat grid, first TEN letters will be used as a PREFIX for data loading (e.g. MODEL_1234)');
                     set(findobj('Tag','text_ocean_convert_output'),'String',ghc_path,'UserData',ghc_path);drawnow
                     if name ~=0
                         ghc_path = fullfile(ghc_path,name(1:10));
@@ -1897,8 +1872,9 @@ function mGlobe(in_switch)
                     end
                 end
                 if model_version == 3                                       % prompt user to select GRACE model (fixed prefix is required)
+                    [~,~,grace_main] = mGlobe_getModelPath;
                     set(findobj('Tag','text_status'),'String','You have chosen GRACE model => pick file with *.mat grid, first 22 letters will be used as a PREFIX (e.g. GRC_JPL_RL05_FILT0_OCE)');
-                    [name,path] = uigetfile(fullfile('GRACE','OCEAN'),'Pick file with *.mat grid, first 22 letters will be used as a PREFIX for data loading (e.g. GRC_JPL_RL05_FILT0_OCE)');
+                    [name,~] = uigetfile(grace_main,'Pick file with *.mat grid, first 22 letters will be used as a PREFIX for data loading (e.g. GRC_JPL_RL05_FILT0_OCE)');
                     set(findobj('Tag','text_ocean_convert_output'),'String',ghc_path,'UserData',ghc_path);drawnow
                     if name ~=0
                         ghc_path = fullfile(ghc_path,name(1:22));
@@ -1913,7 +1889,7 @@ function mGlobe(in_switch)
                     
                 if  (ghc_treshold > 1 || ghc_treshold < 0.05) || (start_calc > end_calc) || (sum(double(name)) == 0) % check if everything is set correctly
                     set(findobj('Tag','text_status'),'String','Threshold must be within <0.05,1.00> degree, start time <= end time and model set correctly');
-                elseif exist('mGlobe_DATA_dgE_Hydro.txt')==2 && exist('mGlobe_DATA_OceanGrid.mat')==2
+                elseif exist('mGlobe_DATA_dgE_Hydro.txt','file')==2 && exist('mGlobe_DATA_OceanGrid.mat','file')==2
                     set(findobj('Tag','text_status'),'String','Ocean: starting the computation...');drawnow
                     mGlobe_calc_Ocean(Input,output_file,output_file_type,start_calc,end_calc,step_calc,ghc_treshold,ghc_path,model_version,subtract_average,mean_field,pressure_time_series); % start the NTOL computation
                     pause(5)                                                % wait 5 sec, than write original message
@@ -2040,7 +2016,7 @@ function mGlobe(in_switch)
                 end
                 if check_load ~= 0
                     set(findobj('Tag','text_status'),'String','Check time settings and load all valid input data (temperature, humidity, geopotential, surface data and orography)');
-                elseif exist('mGlobe_DATA_dgE_Atmo.txt')==2 && exist('mGlobe_DATA_OceanGrid.mat')==2
+                elseif exist('mGlobe_DATA_dgE_Atmo.txt','file')==2 && exist('mGlobe_DATA_OceanGrid.mat','file')==2
                     set(findobj('Tag','text_status'),'String','Atmo: starting the computation...');drawnow
                     mGlobe_calc_Atmo_ERA(Input,output_file,output_file_type,file_ref,file_temp,file_humid,file_height,file_sp,start_calc,end_calc,step_calc,subtract_average);
                     pause(5)                                                % wait 5 sec, than write output message
@@ -2111,7 +2087,7 @@ function mGlobe(in_switch)
                 end
                 if check_load ~= 0
                     set(findobj('Tag','text_status'),'String','Check time settings and load all valid input data (temperature, humidity, geopotential, surface data and orography)');
-                elseif exist('mGlobe_DATA_dgE_Atmo.txt')==2 && exist('mGlobe_DATA_OceanGrid.mat')==2
+                elseif exist('mGlobe_DATA_dgE_Atmo.txt','file')==2 && exist('mGlobe_DATA_OceanGrid.mat','file')==2
                     set(findobj('Tag','text_status'),'String','Atmo: starting the computation...');drawnow
                     mGlobe_calc_Atmo_MERRA(Input,output_file,output_file_type,file_ref,file_temp,file_humid,file_height,file_sthd,file_sp,start_calc,end_calc,step_calc,subtract_average);
                     pause(5)                                                % wait 5 sec, than write output message
@@ -2123,8 +2099,44 @@ function mGlobe(in_switch)
         end
 
     end
-
+function [ghm_main,obpm_main,grace_main] = mGlobe_getModelPath
+    try
+        er = 0;
+        fid = fopen('mGlobe_PATH_Settings.txt','r');
+        if fid > 0
+            setting = textscan(fid,'%s %s','Delimiter','>','commentstyle','%');
+            if length(setting{1}) ~= 3
+                er = 1;
+            else
+                ghm_main = [];grace_main = [];
+                for ii = 1:length(setting{1})
+                    switch char(setting{1}(ii))
+                        case 'GHM'
+                            ghm_main = char(setting{2}(ii));
+                        case 'GRACE'
+                            grace_main = char(setting{2}(ii));
+                        case 'OBPM'
+                            obpm_main = char(setting{2}(ii));
+                    end
+                end
+            end
+        else
+            er = 1;
+        end
+        fclose(fid);
+    catch
+        er = 1;
+    end
+    if er == 1 || isempty(ghm_main) || isempty(grace_main) || isempty(obpm_main)
+        disp('Could not set model paths!');
+        % Use default values if error occurred
+        ghm_main = 'GHM';
+        grace_main = 'GRACE';
+        obpm_main = 'OBPM';
+    end
 end
+end
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  KONIEC  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 

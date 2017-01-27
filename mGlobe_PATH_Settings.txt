@@ -1,0 +1,13 @@
+% Set path to folders containing global hydrological (GHM), ocean bottom pressure (OBPM)
+% and GRACE models. Use either relative or absolute path (relative path was used in 
+% previous version of mGlobe).
+% Set MODEL>PATH 
+%	Example1 	for relative path used in previous version of mGlobe:
+% 				GHM>GHM 
+%				-> this means the mGlobe repository contains GHM sub-folder
+%				with all models (CLM, MOS,... sub-folders)
+% 	Example2	for absolute path to OBPM use:
+%				OBPM>C:\Data\OBPM
+GHM>GHM
+OBPM>OBPM
+GRACE>GRACE

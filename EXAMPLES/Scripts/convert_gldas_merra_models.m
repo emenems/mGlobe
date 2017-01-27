@@ -45,7 +45,10 @@ input_path = 'F:\Downloads\GLDAS\MOS';
 % Set ONE file name (just to generate correct input file name for all
 % required time steps)
 input_file = 'GLDAS_MOS10SUBP_3H.A2015215.0900.001.2016231095228.pss.nc';
-
+% Output folder. Warning, the settings in 'mGlobe_PATH_Settings.txt' are
+% in this case irrelevant!! The correct sub-folder name (e.g. NOAH025) will
+% be appended automatically.
+output_folder = 'F:\Documents\mGlobe\GHM';
 % NO progress-bar will be shown!
 
 %% Main code
@@ -107,25 +110,25 @@ switch task_switch
         switch input_file(1:11)
             case 'GLDAS_CLM10'
                 model = 1;
-                ghc_path = 'GHM\CLM';
+                ghc_path = fullfile(output_folder,'CLM');
             case 'GLDAS_MOS10'
                 model = 2;
-                ghc_path = 'GHM\MOS'; 
+                ghc_path = fullfile(output_folder,'MOS'); 
             case 'GLDAS_NOAH0'
                 model = 3;
-                ghc_path = 'GHM\NOAH025';
+                ghc_path = fullfile(output_folder,'NOAH025');
             case 'GLDAS_NOAH1'
                 model = 4;
-                ghc_path = 'GHM\NOAH10';
+                ghc_path = fullfile(output_folder,'NOAH10');
             case 'GLDAS_VIC10'
                 model = 5;
-                ghc_path = 'GHM\VIC';
+                ghc_path = fullfile(output_folder,'VIC');
             case 'MERRA300.pr'
                 model = 6;
-                ghc_path = 'GHM\MERRA';
+                ghc_path = fullfile(output_folder,'MERRA');
             otherwise
                 model = 0;
-                ghc_path = 'GHM\OTHER';
+                ghc_path = fullfile(output_folder,'OTHER');
         end
         % Call conversion script
         mGlobe_convert_GLDAS(datenum(date_start),datenum(date_stop),model,step_calc,ghc_path,input_path,input_file)

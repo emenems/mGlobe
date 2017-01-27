@@ -1,5 +1,5 @@
 %% Compute mGlobe ATMO effect
-% Using this script, user can call the mGlobe atmosperic effect function
+% Using this script, user can call the mGlobe atmospheric effect function
 % and compute the gravity effect for ERA Interim model.
 clear
 clc
@@ -24,7 +24,6 @@ file_sp = 'I:\GlobalModel\ERAinterim\Surface\ERA_SP_2T_2D_ALLh_06hStep_D_2000.nc
 mglobe_folder = fullfile('..','..');                                        % mGlobe folder (all mGlobe functions are in this folder)
 
 %% Additional settings
-exclude_calc = [1,1];                                                       % [greenland, antarctica], 0 - off, 1 - exclude
 output_file_type = [0 1 0];                                                 % [xls, txt, tsf], 0 - off, 1 - on
 subtract_average = 0;                                                       % subtract average values from all results, 0- off, 1 - on
 
@@ -64,7 +63,7 @@ for i = 1:length(sites{1,2});											% loop for each site
         % Compute
         cd(mglobe_folder)                                               % change folder to mGlobe
         mGlobe_calc_Atmo_ERA(Input,output_file,output_file_type,file_ref,file_temp,file_humid,file_height,file_sp,start_calc,end_calc,step_calc,subtract_average)
-%         clear Input output_file curr_DEM                                % remove used variables
+        clear Input output_file
         cd(currentFolder);                                              % change folder back
     end
 end

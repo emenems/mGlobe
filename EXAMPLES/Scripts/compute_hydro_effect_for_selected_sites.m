@@ -8,20 +8,24 @@ clc
 %% Main settings
 % Location
 location = 'GGP_COORDINATES.txt'; 											% this variable points the the file with coordinates
-output_file_prefix = fullfile('EXAMPLES','Scripts','Results');              % folder for results. Path relative to mGlobe folder
+output_file_prefix = 'F:\Documents\mGlobe\EXAMPLES\Hydro';                    % folder for results. Use relative or absolute Path
 select_site = 'All';                                                        % set GGP abbreviation (e,g., 'PE'), or 'All' for all sites (see GGP_COORDINATES.txt file)
 % Time
 start_calc = datenum(2012,1,1,12,0,0);										% starting time
-end_calc = datenum(2014,1,1,12,0,0);										% last epoch
+end_calc = datenum(2014,1,10,12,0,0);										% last epoch
 step_calc = 4;                                                              % see  'switch step_calc' section (4 => daily, 3=> 12 hours,...)
 % Model
 select_model = 4;                                                           % use either number of the GHM (4 = GLDAS/NOAH10) or 'All' for all models (see 'switch model_calc(j)' section)
 mass_conserv = 2;                                                           % 1 - off, 2 - ocean layer (from mass excess), 3 - as given by input model
 ghc_treshold = 0.10;                                                        % in degree (spherical distance)
 % mGlobe
-mglobe_folder = fullfile('..','..');                                        % mGlobe folder (all mGlobe functions are in this folder)
-DEM_file = fullfile('EXAMPLES','Models','DEM_ETOPO2_example.mat');          % *.mat DEM (matlab array containing *.lon,*.lat,*.height layers), set to [] if not required. Path relative to mGlobe folder
-INCLUDE_file = [];                                                           % [] for no inclusion polygon = all grid cells are used, otherwise, txt file for "inlude  only" area (longitude,latidude (deg))
+mglobe_folder = fullfile('..','..');                                        % mGlobe folder (all mGlobe functions are in this folder). Relative or absolute path
+DEM_file = 'F:\Documents\mGlobe\EXAMPLES\Models\DEM_ETOPO2_example.mat'; % *.mat DEM (matlab array containing *.lon,*.lat,*.height layers), set to [] if not required. Use absolute path
+INCLUDE_file = [];                                                           % [] for no inclusion polygon = all grid cells are used, otherwise, txt file for "include  only" area (longitude,latitude (deg))
+% Model folder. Warning, the settings in 'mGlobe_PATH_Settings.txt' are
+% in this case irrelevant!! The correct sub-folder name (e.g. NOAH025) will
+% be appended automatically.
+model_folder = 'F:\Documents\mGlobe\GHM';
 
 %% Additional settings
 exclude_calc = [1,1];                                                       % [greenland, antarctica], 0 - off, 1 - exclude
@@ -71,34 +75,34 @@ for j = 1:length(model_calc);												% loop for each model
             switch model_calc(j)                                            % switch between models
                 case 1  
                    model_name = 'CLM';  
-                   ghc_path = 'GHM\CLM';
+                   ghc_path = fullfile(model_folder,'CLM');
                 case 2  
                    model_name = 'MOS'; 
-                   ghc_path = 'GHM\MOS'; 
+                   ghc_path = fullfile(model_folder,'MOS'); 
                 case 3  
                    model_name = 'NOAH025';  
-                   ghc_path = 'GHM\NOAH025';
+                   ghc_path = fullfile(model_folder,'NOAH025');
                 case 4 
                    model_name = 'NOAH10';  
-                   ghc_path = 'GHM\NOAH10';
+                   ghc_path = fullfile(model_folder,'NOAH10');
                 case 5 
                    model_name = 'VIC'; 
-                   ghc_path = 'GHM\VIC';
+                   ghc_path = fullfile(model_folder,'VIC');
                 case 6 
                    model_name = 'ERA'; 
-                   ghc_path = 'GHM\ERA';
+                   ghc_path = fullfile(model_folder,'ERA');
                 case 7 
                    model_name = 'MERRA'; 
-                   ghc_path = 'GHM\MERRA';
+                   ghc_path = fullfile(model_folder,'MERRA');
                 case 8 
                    model_name = 'Other'; 
-                   ghc_path = 'GHM\OTHER';
+                   ghc_path = fullfile(model_folder,'OTHER');
                 case 9 
                    model_name = 'GRACE'; 
-                   ghc_path = 'GRACE\LAND';
+                   ghc_path = fullfile(model_folder,'LAND');
                 case 10 
                    model_name = 'NCEP'; 
-                   ghc_path = 'GHM\NCEP';
+                   ghc_path = fullfile(model_folder,'NCEP');
             end
             if isempty(INCLUDE_file)										% inclusion polygon
                 inc = 'All';
@@ -110,9 +114,7 @@ for j = 1:length(model_calc);												% loop for each model
             % Input
             Input = [sites{1,3}(i),sites{1,2}(i),sites{1,4}(i)];            % input coordinates
 
-            % change folder to mGlobe
-            cd(mglobe_folder)                                               
-			% load DEM to check if it contains point of computation
+            % load DEM to check if it contains point of computation
             if ~isempty(DEM_file)	
                 if ~exist('dem','var')
                     dem = importdata(DEM_file);
@@ -128,6 +130,8 @@ for j = 1:length(model_calc);												% loop for each model
 				curr_DEM = [];
                 Input(3) = 0;                                               % set height to zero if DEM not loaded
             end
+			% Change folder to mGlobe 
+            cd(mglobe_folder)
 			% Compute
             mGlobe_calc_Hydro(Input,output_file,output_file_type,curr_DEM,start_calc,end_calc,step_calc,exclude_calc,model_calc(j),model_layer,mass_conserv,ghc_treshold,ghc_path,subtract_average,INCLUDE_file)
             clear Input output_file curr_DEM                                        % remove used variables
