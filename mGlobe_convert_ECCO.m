@@ -15,7 +15,7 @@ function mGlobe_convert_ECCO(start_calc,end_calc,time_resol,file,ghc_path,input_
 %                  ... layer 2 == longitude (deg)
 %                  ... layer 5 == time
 %                  ... layer 7 == Ocean Bottom Pressure Pot. Anomaly
-%                  ... the conversion requires the same folder structer as:
+%                  ... the conversion requires the same folder structure as:
 %                      ftp://snowwhite.jpl.nasa.gov/data4/KalmanFilter/
 % 
 %   ECCO2          ... layer 1 == latitude (deg)
@@ -107,19 +107,27 @@ switch model_version
         if time_resol < 6
             for i = 1:length(time(:,7))
                 try
-                    fix_path = input_path(1:end-25);
-                    year_folder = sprintf('kf080_%04d',time(i,1));
+                    if strcmp(input_path(end),'\')
+                        fix_path = input_path(1:end-18);
+                    else
+                        fix_path = input_path(1:end-17);
+                    end
+                    year_folder = [fix_path,sprintf('%04d',time(i,1))];
                     day_of_year = fix(time(i,7)-datenum(time(i,1),1,1,0,0,0))+1;
                     if day_of_year<=90
-                        quarter_folder = 'n10day_01_09\OBPano_08_08.00001_02160_012.cdf';
+                        temp = dir(fullfile(year_folder,'n10day_01_*'));
+                        file_name = fullfile(year_folder,temp(1).name,'OBPano_08_08.00001_02160_012.cdf');
                     elseif day_of_year<=180
-                        quarter_folder = 'n10day_10_18\OBPano_08_08.02160_04320_012.cdf';
+                        temp = dir(fullfile(year_folder,'n10day_10_*'));
+                        file_name = fullfile(year_folder,temp(1).name,'OBPano_08_08.02160_04320_012.cdf');
                     elseif day_of_year<=270
-                        quarter_folder = 'n10day_19_27\OBPano_08_08.04320_06480_012.cdf';
+                        temp = dir(fullfile(year_folder,'n10day_19_*'));
+                        file_name = fullfile(year_folder,temp(1).name,'OBPano_08_08.04320_06480_012.cdf');
                     else
-                        quarter_folder = 'n10day_28_37\OBPano_08_08.06480_08880_012.cdf';
+                        temp = dir(fullfile(year_folder,'n10day_28_*'));
+                        file_name = fullfile(year_folder,temp(1).name,'OBPano_08_08.06480_08880_012.cdf');
                     end
-                    file_name = fullfile(fix_path,year_folder,quarter_folder);
+					clear temp;
                     ncid = netcdf.open(file_name,'NC_NOWRITE');                     % open NetCDF file
                     out_mat.lat = netcdf.getVar(ncid,0,'double');                   % get latitude
                     out_mat.lon = netcdf.getVar(ncid,2,'double');                   % get longitude
@@ -222,7 +230,7 @@ switch model_version
                 if time_resol == 6                                          % save model values 
                     save(fullfile(ghc_path,sprintf('ECCO2_M_%04d%02d.mat',time(i,1),time(i,2))),'out_mat');
                 else
-                    save(fullfile(ghc_path,sprintf('ECCO2_D_%04d%02d%02d_%02d.mat',time(i,1),time(i,2),time(i,3),time(i,4))),'out_mat');
+                    save(fullfile(ghc_path,sprintf('ECCO2_D_%04d%02d%02d_12.mat',time(i,1),time(i,2),time(i,3))),'out_mat');
                 end
                 netcdf.close(ncid)                                              % close the netcdf file
                 if size(time,1) > 2
