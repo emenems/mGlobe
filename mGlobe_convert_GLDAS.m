@@ -21,6 +21,7 @@ function mGlobe_convert_GLDAS(start_calc,end_calc,model,time_resol,ghc_path,inpu
 %                  ... layer 4 == contains 3 soil moisture layers
 %                  ... layer 5 == snow water equivalent
 %   MERRA          ... MAT1NXLND layers: TWLAND, XDim, YDim 
+%   MERRA2         ... M2T1NXLND layers: TWLAND, lon, lat,time 
 % 
 % INPUT:
 %   start_calc     ... starting time in matlab format (days)
@@ -37,6 +38,7 @@ function mGlobe_convert_GLDAS(start_calc,end_calc,model,time_resol,ghc_path,inpu
 %         4        ... NOAH with 1.0 deg spatial resolution
 %         5        ... VIC model (1.0 deg spatial resolution)
 %         6        ... MERRA model (0.667x0.5 deg spatial resolution)
+%         7        ... MERRA model (0.667x0.5 deg spatial resolution)
 %                      Example: 1
 %   ghc_path 	     ... output path (string)
 %                      Example: fullfile('GHM','CLM');
@@ -56,7 +58,6 @@ function mGlobe_convert_GLDAS(start_calc,end_calc,model,time_resol,ghc_path,inpu
 %   out_mat.units  ... swe and soilmX units
 % 
 %                                         M.Mikolaj, mikolaj@gfz-potsdam.de
-%                                                                18.08.2016
 %                                                                      v1.0
 
 %% Time setting
@@ -341,6 +342,79 @@ switch model
                 netcdf.close(ncid);
                 save(nazov,'out_mat')
         end
+    case 7  % MERRA2
+        switch time_resol
+            case 6
+                cfile = fullfile(input_path,sprintf('%s%04d%02d*',input_file(1:27),time(i,1),time(i,2)));
+                cfile = dir(cfile); % get exact file name without wildcard
+                ncid = netcdf.open(fullfile(input_path,cfile.name),'NC_NOWRITE'); % use fullfile function as the dir command returns only file name, no path
+                nazov = fullfile(ghc_path,sprintf('MERRA2_M_%4d%02d.mat',time(i,1),time(i,2))); 
+                [~,numvars] = netcdf.inq(ncid);                                   % get all variable names
+                for j = 0:numvars-1                                                     % transform all layers (not only svwlX and sd)!!
+                    name = netcdf.inqVar(ncid,j);                                       % get variable name
+                    switch name
+                        case 'lon'
+                          lon_vec = double(netcdf.getVar(ncid,j));
+                          % take care of rounding error
+                          lon_vec = round(lon_vec*1e+10)./1e+10;
+                        case 'lat'
+                          lat_vec = double(netcdf.getVar(ncid,j));
+                          lat_vec = round(lat_vec*1e+10)./1e+10;
+                        case 'TWLAND'
+                          temp = double(netcdf.getVar(ncid,j));
+                    end
+                end
+                out_mat.twland = temp';
+                out_mat.twland(out_mat.twland>9.999e+14 | out_mat.twland<0) = 0;
+                % Create lon/lat matrix
+                [out_mat.lon,out_mat.lat] = meshgrid(lon_vec,lat_vec);
+                out_mat.time = time(i,7);
+                out_mat.source = cfile;
+                out_mat.units = 'mm';
+                netcdf.close(ncid);
+                save(nazov,'out_mat')
+            otherwise
+                cfile = fullfile(input_path,sprintf('%s%04d%02d%02d*',input_file(1:27),time(i,1),time(i,2),time(i,3)));
+                cfile = dir(cfile); % get exact file name without wildcard
+                ncid = netcdf.open(fullfile(input_path,cfile.name),'NC_NOWRITE'); % use fullfile function as the dir command returns only file name, no path
+                nazov = fullfile(ghc_path,sprintf('MERRA2_1H_%4d%02d%02d_%02d.mat',time(i,1),time(i,2),time(i,3),time(i,4))); % 
+                [~,numvars] = netcdf.inq(ncid);                                   % get all variable names
+                for j = 0:numvars-1                                                     % transform all layers (not only svwlX and sd)!!
+                    name = netcdf.inqVar(ncid,j);                                       % get variable name
+                    switch name
+                        case 'lon'
+                          lon_vec = double(netcdf.getVar(ncid,j));
+                          % take care of rounding error
+                          lon_vec = round(lon_vec*1e+10)./1e+10;
+                        case 'lat'
+                          lat_vec = double(netcdf.getVar(ncid,j));
+                          lat_vec = round(lat_vec*1e+10)./1e+10;
+                        case 'TWLAND'
+                          temp = double(netcdf.getVar(ncid,j));
+                    end
+                end
+                out_mat.twland = temp(:,:,time(i,4)+1);
+                out_mat.twland = out_mat.twland';
+                out_mat.twland(out_mat.twland>9.999e+14 | out_mat.twland<0) = 0;
+                % Check if longitude vector exist (new Merra data format does not contain XDim variable)
+                if ~exist('lon_vec','var')
+                    lon_res = 360/size(out_mat.twland,2);
+                    lon_vec = -180:lon_res:180-lon_res/2;
+                end
+                % Do the same for latitude
+                if ~exist('lat_vec','var')
+                    % Do not use linspace for longitude as -180 == 180 whereas -90 ~= 90 (data for pole)
+                    lat_vec = linspace(-90,90,size(out_mat.twland,1));
+                end
+                % Create lon/lat matrix
+                [out_mat.lon,out_mat.lat] = meshgrid(lon_vec,lat_vec);
+                out_mat.time = time(i,7);
+                out_mat.source = cfile;
+                out_mat.units = 'mm';
+                netcdf.close(ncid);
+                save(nazov,'out_mat')
+        end
+        
             
 end
 catch

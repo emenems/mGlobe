@@ -6,23 +6,23 @@ clc
 
 %% Settings
 % Set time interval. Set carefully, this may overwrite existing files
-time_start = [2015,1,1];
-time_stop  = [2015,1,3];
+time_start = [2016,12,31];
+time_stop  = [2017,3,1];
 
 % Set folder for data download ECCO1 & ECCO2
-path_download1 = 'i:\GlobalModel\ECCO1\kfh_080\'; % ECCO1
-path_download2 = 'i:\GlobalModel\ECCO2\PHIBOT\'; % ECCO1
+path_download1 = 'd:\GlobalModel\ECCO1\kfh_080\'; % ECCO1
+path_download2 = 'd:\GlobalModel\ECCO2\PHIBOT\'; % ECCO2
 % Set path with mGlobe OBPM (without 'ECCO1' & 'ECCO2' subfolder)
-path_mglobe_obpm = 'f:\code\libraries\mGlobe\OBPM\';
+path_mglobe_obpm = 'F:\mikolaj\data\global_model\mglobe\OBPM\';
 % Set path with mGlobe functions
-path_mglobe = 'f:\code\libraries\mGlobe';
+path_mglobe = 'F:\mikolaj\code\libraries\mGlobe';
 
 % Set what should be done
-download_data = 3; % 0 = Off, 1 == ECCO1, 2 == ECCO2, 3 == ECCO1+ECCO2
-convert_data = 3; % just like 'download_data'
+download_data = 0; % 0 = Off, 1 == ECCO1, 2 == ECCO2, 3 == ECCO1+ECCO2
+convert_data = 1; % just like 'download_data'
 
-% Close matlab/octave after
-close_after_comutation = 1; 
+% Close matlab/octave after downloading/conversion
+close_after_comutation = 0; 
 
 %% ECCO FTP server settings
 % set FTP connection to ECCO1

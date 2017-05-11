@@ -115,17 +115,25 @@ switch model_version
                     year_folder = [fix_path,sprintf('%04d',time(i,1))];
                     day_of_year = fix(time(i,7)-datenum(time(i,1),1,1,0,0,0))+1;
                     if day_of_year<=90
+                        % Get the folder name (depends on the total number
+                        % of days => not constant)
                         temp = dir(fullfile(year_folder,'n10day_01_*'));
-                        file_name = fullfile(year_folder,temp(1).name,'OBPano_08_08.00001_02160_012.cdf');
+                        % Get file name (just like folder name)
+                        loc_file = dir(fullfile(year_folder,temp(1).name,'OBPano*'));
+                        % Combine folder and file names for reading
+                        file_name = fullfile(year_folder,temp(1).name,loc_file(1).name);
                     elseif day_of_year<=180
                         temp = dir(fullfile(year_folder,'n10day_10_*'));
-                        file_name = fullfile(year_folder,temp(1).name,'OBPano_08_08.02160_04320_012.cdf');
+                        loc_file = dir(fullfile(year_folder,temp(1).name,'OBPano*'));
+                        file_name = fullfile(year_folder,temp(1).name,loc_file(1).name);
                     elseif day_of_year<=270
                         temp = dir(fullfile(year_folder,'n10day_19_*'));
-                        file_name = fullfile(year_folder,temp(1).name,'OBPano_08_08.04320_06480_012.cdf');
+                        loc_file = dir(fullfile(year_folder,temp(1).name,'OBPano*'));
+                        file_name = fullfile(year_folder,temp(1).name,loc_file(1).name);
                     else
                         temp = dir(fullfile(year_folder,'n10day_28_*'));
-                        file_name = fullfile(year_folder,temp(1).name,'OBPano_08_08.06480_08880_012.cdf');
+                        loc_file = dir(fullfile(year_folder,temp(1).name,'OBPano*'));
+                        file_name = fullfile(year_folder,temp(1).name,loc_file(1).name);
                     end
 					clear temp;
                     ncid = netcdf.open(file_name,'NC_NOWRITE');                     % open NetCDF file

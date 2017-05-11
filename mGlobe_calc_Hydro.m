@@ -29,7 +29,7 @@ function mGlobe_calc_Hydro(Input,output_file,output_file_type,DEM_file,start_cal
 %						  1 = GLDAS/CLM, 2 = GLDAS/MOS, 
 %					      3 = GLDAS/NOAH025, 4 = GLDAS/NOAH10,
 %					      5 = GLDAS/VIC, 6 = ERA, 7 = MERRA,
-%					      8 = OTHER, 9 = GRACE, 10 = NCEP.
+%					      8 = OTHER, 9 = GRACE, 10 = NCEP, 11 = MERRA
 %						  Example: 3
 %   model_layer       ... Model layer (depends on model_calc). For all
 %						  models, 1 = total water storage
@@ -462,7 +462,6 @@ for i = 1:size(time,1);
                 set(findobj('Tag','text_status'),'String',out_message); drawnow
                 check_out = 1;
             end
-            
         case 7                                                              % MERRA
             model_name = 'MERRA';
             if exclude_calc(1) == 0 && exclude_calc(2) == 0                 % nothing is excluded
@@ -551,6 +550,31 @@ for i = 1:size(time,1);
                 new.lon = horzcat(new.lon(:,ri+1:end),new.lon(:,1:ri));     % Connect matrices to remove discontinuity
             	new.lat = horzcat(new.lat(:,ri+1:end),new.lat(:,1:ri));
                 new.celkovo = horzcat(new.celkovo(:,ri+1:end),new.celkovo(:,1:ri));clear ri;
+            catch exeption
+                out_message = sprintf('Hydro: file %s not found',nazov);
+                set(findobj('Tag','text_status'),'String',out_message); drawnow
+                check_out = 1;
+            end
+        case 11                                                              % MERRA2
+            model_name = 'MERRA2';
+            if exclude_calc(1) == 0 && exclude_calc(2) == 0                 % nothing is excluded
+                ref_mass_conserv = 7.06837661278356e+16;
+            elseif exclude_calc(2) == 0 && exclude_calc(1) == 1             % only Greenland excluded
+                ref_mass_conserv = 7.03007526693119e+16;
+            elseif exclude_calc(2) == 1 && exclude_calc(1) == 1             % Greenland and Antarctica excluded
+                ref_mass_conserv = 7.03007526693119e+16;
+            elseif exclude_calc(2) == 1 && exclude_calc(1) == 0             % only Antarctica excluded
+                ref_mass_conserv = 7.06837661278356e+16;
+            end
+            if step_calc == 6
+                nazov = fullfile(ghc_path,sprintf('MERRA2_M_%4d%02d.mat',time(i,1),time(i,2))); 
+            else
+                nazov = fullfile(ghc_path,sprintf('MERRA2_1H_%4d%02d%02d_%02d.mat',time(i,1),time(i,2),time(i,3),time(i,4)));
+            end
+            try
+                new = importdata(nazov);
+                new.celkovo = new.twland;                                   % sum all layers (TWS). No model_layer switch required = only one layer available
+                out_layer = 'total (twland)';
             catch exeption
                 out_message = sprintf('Hydro: file %s not found',nazov);
                 set(findobj('Tag','text_status'),'String',out_message); drawnow

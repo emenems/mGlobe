@@ -41,14 +41,14 @@ date_stop = [2015 08 08 12 00 00]; % yyyy mm dd HH MM SS
 % Time resolution switch
 step_calc = 4; % 2 => 6 hours, 3=> 12 hours, ...
 % Set folder name containing all NetCDF files
-input_path = 'F:\Downloads\GLDAS\MOS';
+input_path = 'd:\GlobalModel\MERRA2\';
 % Set ONE file name (just to generate correct input file name for all
 % required time steps)
-input_file = 'GLDAS_MOS10SUBP_3H.A2015215.0900.001.2016231095228.pss.nc';
+input_file = 'MERRA2_400.tavg1_2d_lnd_Nx.20161218.nc4.nc';
 % Output folder. Warning, the settings in 'mGlobe_PATH_Settings.txt' are
 % in this case irrelevant!! The correct sub-folder name (e.g. NOAH025) will
 % be appended automatically.
-output_folder = 'F:\Documents\mGlobe\GHM';
+output_folder = 'f:\mikolaj\code\libraries\mGlobe\GHM\';
 % NO progress-bar will be shown!
 
 %% Main code
@@ -126,6 +126,15 @@ switch task_switch
             case 'MERRA300.pr'
                 model = 6;
                 ghc_path = fullfile(output_folder,'MERRA');
+            case 'MERRA2_200.'
+                model = 7;
+                ghc_path = fullfile(output_folder,'MERRA2');
+            case 'MERRA2_300.'
+                model = 7;
+                ghc_path = fullfile(output_folder,'MERRA2');
+            case 'MERRA2_400.'
+                model = 7;
+                ghc_path = fullfile(output_folder,'MERRA2');
             otherwise
                 model = 0;
                 ghc_path = fullfile(output_folder,'OTHER');

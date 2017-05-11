@@ -3,7 +3,7 @@ function mGlobe(in_switch)
 % mGlobe toolbox allows user to calculate the global hydrological, 
 % atmospheric and non-tidal ocean loading effects. All required inputs
 % can be converted via the provided GUI. Obtained results can
-% be visualised using the provided 1D and 2D plotting functions. 
+% be visualized using the provided 1D and 2D plotting functions. 
 % Please read the mGlobe_USER_MANUAL.pdf file before using mGlobe.
 % This mGlobe version is designed for reviewing purposes (submitted to 
 % Computers & Geosciences Journal). Always check for the latest 
@@ -312,7 +312,7 @@ function mGlobe(in_switch)
                     'Style','Text','String','Model');
         uicontrol(p1_5,'units','characters','Position',[13.6 2.769 27.6 1.692],...
                     'Style','Popupmenu','Tag','popup_hydro_model',...
-                    'String','GLDAS/CLM|GLDAS/MOS|GLDAS/NOAH (0.25°)|GLDAS/NOAH (1°)|GLDAS/VIC|ERA Interim|MERRA (assimilation)|Other|GRACE|NCEP Reanalysis-2',...
+                    'String','GLDAS/CLM|GLDAS/MOS|GLDAS/NOAH (0.25°)|GLDAS/NOAH (1°)|GLDAS/VIC|ERA Interim|MERRA (assimilation)|Other|GRACE|NCEP Reanalysis-2|MERRA2',...
                     'Value',3,'BackgroundColor','white','CallBack','mGlobe select_hydro_model');
         uicontrol(p1_5,'units','characters','Position',[67.2 3 8 1.077],...
                     'Style','Text','Tag','push_hydro_model_path',...
@@ -557,7 +557,7 @@ function mGlobe(in_switch)
                     'Style','Text','String','/GHM/NOAH025/',...
                     'Tag','text_down_gldas_path');
         uicontrol(p3_1,'units','characters','Position',[18.8 0.8 25 1.692],...
-                    'Style','Popupmenu','String','GLDAS/CLM|GLDAS/MOS|GLDAS/NOAH025|GLDAS/NOAH10|GLDAS/VIC|MERRA/Land (assimilation)',...
+                    'Style','Popupmenu','String','GLDAS/CLM|GLDAS/MOS|GLDAS/NOAH025|GLDAS/NOAH10|GLDAS/VIC|MERRA Land|MERRA2 Land',...
                     'Tag','popup_down_gldas_model','Value',3,'BackgroundColor','white',...
                     'CallBack','mGlobe select_down_model');
         uicontrol(p3_1,'units','characters','Position',[49.6 1.11 12.8 1.08],...
@@ -1057,7 +1057,7 @@ function mGlobe(in_switch)
                 ghm_path = {fullfile(ghm_main,'CLM'),fullfile(ghm_main,'MOS'),...
                             fullfile(ghm_main,'NOAH025'),fullfile(ghm_main,'NOAH10'),...
                             fullfile(ghm_main,'VIC'),fullfile(ghm_main,'ERA'),fullfile(ghm_main,'MERRA'),...
-                            fullfile(ghm_main,'OTHER'),fullfile(grace_main,'LAND'),fullfile(ghm_main,'NCEP')};
+                            fullfile(ghm_main,'OTHER'),fullfile(grace_main,'LAND'),fullfile(ghm_main,'NCEP'),fullfile(ghm_main,'MERRA2')};
                 val = get(findobj('Tag','popup_hydro_model'),'Value');
                 set(findobj('Tag','push_hydro_model_path'),'UserData',ghm_path{val}); % each button stores data about the path to model data
                 set(findobj('Tag','text_hydro_model_path'),'String',ghm_path{val}); % show path for current model
@@ -1092,6 +1092,8 @@ function mGlobe(in_switch)
                         set(findobj('Tag','popup_hydro_model_layer'),'String','total');
                     case 10
                         set(findobj('Tag','popup_hydro_model_layer'),'String','total|soilw1|soilw2|weasd');
+                    case 11
+                        set(findobj('Tag','popup_hydro_model_layer'),'String','total (twland)');
                 end
             case 'load_hydro_dem'                                          % Load DEM for Hydro effect (Continental water storage)
                 [name,path] = uigetfile('*.*','Load DEM up to 1° from point of observation');
@@ -1480,6 +1482,9 @@ function mGlobe(in_switch)
                     case 6
                         set(findobj('Tag','push_down_gldas_path'),'UserData',fullfile(ghm_main,'MERRA'));
                         set(findobj('Tag','text_down_gldas_path'),'String',fullfile(ghm_main,'MERRA'));
+                    case 7
+                        set(findobj('Tag','push_down_gldas_path'),'UserData',fullfile(ghm_main,'MERRA2'));
+                        set(findobj('Tag','text_down_gldas_path'),'String',fullfile(ghm_main,'MERRA2'));
                 end
             case 'calc_down_gldas'
                 [name,path] = uigetfile('*.nc','Choose ONE input GLDAS or MERRA netCDF file'); % select ERA interim netcdf (*.nc) input file
@@ -1503,8 +1508,7 @@ function mGlobe(in_switch)
                         set(findobj('Tag','text_status'),'String','Start time must be <= End time');
                     else
                         set(findobj('Tag','text_status'),'String','Models: Starting the conversion...');drawnow
-                        if model_version <=6 
-%                             mGlobe_download_GLDAS(start_calc,end_calc,model_version,step_calc,output_path); % OLD FUNCTION. Not compatible with new GLDAS data policy. download+convert GLDAS data
+                        if model_version <=7 
                             mGlobe_convert_GLDAS(start_calc,end_calc,model_version,step_calc,output_path,input_path,input_file);
                         end
                         set(findobj('Tag','text_status'),'String','Conversion completed');

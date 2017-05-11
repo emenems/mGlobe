@@ -27,7 +27,7 @@ function mGlobe_convert_NCEP(start_calc,end_calc,time_resol,input_path,ghc_path)
 %                      3 == 12 hours, 4 == 24 hours, 5 == 48 hours, 6 == month.
 %                      example: 4
 %   input_path     ... one of the NCEP NetCDF files
-%                      Example: fullfile('E','models','NCEP','soilw.0-10cm.gauss.2012.nc');
+%                      Example: fullfile('E','models','NCEP');
 %   ghc_path       ... path used for output
 %                      Example: fullfile('GHM','NCEP');
 % 

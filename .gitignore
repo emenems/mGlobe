@@ -13,4 +13,6 @@ output.*
 *.asv
 octave-workspace
 
+# Not matlab scripts
+/EXAMPLES/Scripts/era_interim/*.py
 

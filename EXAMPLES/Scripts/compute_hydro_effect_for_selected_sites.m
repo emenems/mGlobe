@@ -8,11 +8,11 @@ clc
 %% Main settings
 % Location
 location = 'GGP_COORDINATES.txt'; 											% this variable points the the file with coordinates
-output_file_prefix = 'F:\Documents\mGlobe\EXAMPLES\Hydro';                    % folder for results. Use relative or absolute Path
+output_file_prefix = 'f:\mikolaj\code\libraries\mGlobe\EXAMPLES\Hydro';     % folder for results. Use relative or absolute Path
 select_site = 'All';                                                        % set GGP abbreviation (e,g., 'PE'), or 'All' for all sites (see GGP_COORDINATES.txt file)
 % Time
 start_calc = datenum(2012,1,1,12,0,0);										% starting time
-end_calc = datenum(2014,1,10,12,0,0);										% last epoch
+end_calc = datenum(2014,1,1,12,0,0);										% last epoch
 step_calc = 4;                                                              % see  'switch step_calc' section (4 => daily, 3=> 12 hours,...)
 % Model
 select_model = 4;                                                           % use either number of the GHM (4 = GLDAS/NOAH10) or 'All' for all models (see 'switch model_calc(j)' section)
@@ -20,12 +20,12 @@ mass_conserv = 2;                                                           % 1 
 ghc_treshold = 0.10;                                                        % in degree (spherical distance)
 % mGlobe
 mglobe_folder = fullfile('..','..');                                        % mGlobe folder (all mGlobe functions are in this folder). Relative or absolute path
-DEM_file = 'F:\Documents\mGlobe\EXAMPLES\Models\DEM_ETOPO2_example.mat'; % *.mat DEM (matlab array containing *.lon,*.lat,*.height layers), set to [] if not required. Use absolute path
+DEM_file = 'f:\mikolaj\code\libraries\mGlobe\EXAMPLES\Models\DEM_ETOPO2_example.mat'; % *.mat DEM (matlab array containing *.lon,*.lat,*.height layers), set to [] if not required. Use absolute path
 INCLUDE_file = [];                                                           % [] for no inclusion polygon = all grid cells are used, otherwise, txt file for "include  only" area (longitude,latitude (deg))
 % Model folder. Warning, the settings in 'mGlobe_PATH_Settings.txt' are
 % in this case irrelevant!! The correct sub-folder name (e.g. NOAH025) will
 % be appended automatically.
-model_folder = 'F:\Documents\mGlobe\GHM';
+model_folder = 'f:\mikolaj\data\global_model\mglobe\GHM';
 
 %% Additional settings
 exclude_calc = [1,1];                                                       % [greenland, antarctica], 0 - off, 1 - exclude
@@ -46,7 +46,7 @@ end
 
 %% Compute
 if ischar(select_model)														% use 'All' models if select_model = 'All'
-    model_calc = [1 2 3 5 6 7 10];                                          % only daily models are supported
+    model_calc = [1 2 3 5 6 7 10 11];                                       % only daily models are supported
 else
     model_calc = select_model;												% use only selected model
 end
@@ -103,6 +103,9 @@ for j = 1:length(model_calc);												% loop for each model
                 case 10 
                    model_name = 'NCEP'; 
                    ghc_path = fullfile(model_folder,'NCEP');
+                case 11 
+                   model_name = 'MERRA2'; 
+                   ghc_path = fullfile(model_folder,'MERRA2');
             end
             if isempty(INCLUDE_file)										% inclusion polygon
                 inc = 'All';

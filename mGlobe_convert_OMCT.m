@@ -26,8 +26,8 @@ function mGlobe_convert_OMCT(start_calc,end_calc,time_resol,file,ghc_path,input_
 %                      Example: fullfile('OBPM','OMCT');
 %   input_path     ... full path to one of the input files
 %                      Example: fullfile('E','models','OMCT');
-%   model_version  ... Product switch: 1 = oba, 2 = ocn, 3 = atm
-%                      Example: 1
+%   model_version  ... Product switch: 5 = oba, 6 = ocn, 7 = atm
+%                      Example: 5
 % 
 % OUTPUT (automatically saved):
 %   omct           ... structure array (several matrices) containing:
