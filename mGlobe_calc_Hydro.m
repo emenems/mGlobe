@@ -29,7 +29,8 @@ function mGlobe_calc_Hydro(Input,output_file,output_file_type,DEM_file,start_cal
 %						  1 = GLDAS/CLM, 2 = GLDAS/MOS, 
 %					      3 = GLDAS/NOAH025, 4 = GLDAS/NOAH10,
 %					      5 = GLDAS/VIC, 6 = ERA, 7 = MERRA,
-%					      8 = OTHER, 9 = GRACE, 10 = NCEP, 11 = MERRA
+%					      8 = OTHER, 9 = GRACE, 10 = NCEP Reanalysis 2, 
+%                         11 = MERRA, 12 = NCEP Reanalysis 1 (beta)
 %						  Example: 3
 %   model_layer       ... Model layer (depends on model_calc). For all
 %						  models, 1 = total water storage
@@ -575,6 +576,45 @@ for i = 1:size(time,1);
                 new = importdata(nazov);
                 new.celkovo = new.twland;                                   % sum all layers (TWS). No model_layer switch required = only one layer available
                 out_layer = 'total (twland)';
+            catch exeption
+                out_message = sprintf('Hydro: file %s not found',nazov);
+                set(findobj('Tag','text_status'),'String',out_message); drawnow
+                check_out = 1;
+            end
+        case 12                                                             % NCEP Reanalysis-1 surface level model
+            model_name = 'NCEP Reanalysis-1 (surface)';
+            if exclude_calc(1) == 0 && exclude_calc(2) == 0                 % nothing is excluded
+                ref_mass_conserv = 7.72203156e+17;
+            elseif exclude_calc(2) == 0 && exclude_calc(1) == 1             % only Greenland excluded
+                ref_mass_conserv = 6.80883335e+17;
+            elseif exclude_calc(2) == 1 && exclude_calc(1) == 1             % Greenland and Antarctica excluded
+                ref_mass_conserv = 6.40132816e+16;
+            elseif exclude_calc(2) == 1 && exclude_calc(1) == 0             % only Antarctica excluded
+                ref_mass_conserv = 1.55333103e+17;
+            end
+            if step_calc == 6
+                nazov = fullfile(ghc_path,sprintf('NCEP_REAN1_M_%4d%02d.mat',time(i,1),time(i,2))); 
+            else
+                nazov = fullfile(ghc_path,sprintf('NCEP_REAN1_6H_%4d%02d%02d_%02d.mat',time(i,1),time(i,2),time(i,3),time(i,4)));
+            end
+            try
+                new = importdata(nazov);
+                switch model_layer
+                    case 1
+                        new.celkovo = (new.soilw1*0.10 + new.soilw2*1.90)*1000 + new.weasd; % transform from m3/m3 and mm of water to kg/m^2 (mm)
+                        out_layer = 'total';
+                    case 2
+                        new.celkovo = (new.soilw1*0.10)*1000;out_layer = 'soilw1';
+                    case 3
+                        new.celkovo = (new.soilw2*1.90)*1000;out_layer = 'soilw2';
+                    case 4
+                        new.celkovo = new.weasd;out_layer = 'weasd';
+                end
+                new.lon(new.lon>=180) = new.lon(new.lon>=180) - 360;        % transform coordinates/longitude to (-180,180) system  
+                ri = find(abs(diff(new.lon(1,:)))==max(abs(diff(new.lon(1,:)))));
+                new.lon = horzcat(new.lon(:,ri+1:end),new.lon(:,1:ri));     % Connect matrices to remove discontinuity
+            	new.lat = horzcat(new.lat(:,ri+1:end),new.lat(:,1:ri));
+                new.celkovo = horzcat(new.celkovo(:,ri+1:end),new.celkovo(:,1:ri));clear ri;
             catch exeption
                 out_message = sprintf('Hydro: file %s not found',nazov);
                 set(findobj('Tag','text_status'),'String',out_message); drawnow

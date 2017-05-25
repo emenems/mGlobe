@@ -312,7 +312,7 @@ function mGlobe(in_switch)
                     'Style','Text','String','Model');
         uicontrol(p1_5,'units','characters','Position',[13.6 2.769 27.6 1.692],...
                     'Style','Popupmenu','Tag','popup_hydro_model',...
-                    'String','GLDAS/CLM|GLDAS/MOS|GLDAS/NOAH (0.25°)|GLDAS/NOAH (1°)|GLDAS/VIC|ERA Interim|MERRA (assimilation)|Other|GRACE|NCEP Reanalysis-2|MERRA2',...
+                    'String','GLDAS/CLM|GLDAS/MOS|GLDAS/NOAH (0.25°)|GLDAS/NOAH (1°)|GLDAS/VIC|ERA Interim|MERRA (assimilation)|Other|GRACE|NCEP Reanalysis-2|MERRA2|NCEP Reanalysis-1',...
                     'Value',3,'BackgroundColor','white','CallBack','mGlobe select_hydro_model');
         uicontrol(p1_5,'units','characters','Position',[67.2 3 8 1.077],...
                     'Style','Text','Tag','push_hydro_model_path',...
@@ -1057,7 +1057,8 @@ function mGlobe(in_switch)
                 ghm_path = {fullfile(ghm_main,'CLM'),fullfile(ghm_main,'MOS'),...
                             fullfile(ghm_main,'NOAH025'),fullfile(ghm_main,'NOAH10'),...
                             fullfile(ghm_main,'VIC'),fullfile(ghm_main,'ERA'),fullfile(ghm_main,'MERRA'),...
-                            fullfile(ghm_main,'OTHER'),fullfile(grace_main,'LAND'),fullfile(ghm_main,'NCEP'),fullfile(ghm_main,'MERRA2')};
+                            fullfile(ghm_main,'OTHER'),fullfile(grace_main,'LAND'),fullfile(ghm_main,'NCEP'),...
+                            fullfile(ghm_main,'MERRA2'),fullfile(ghm_main,'NCEP')};
                 val = get(findobj('Tag','popup_hydro_model'),'Value');
                 set(findobj('Tag','push_hydro_model_path'),'UserData',ghm_path{val}); % each button stores data about the path to model data
                 set(findobj('Tag','text_hydro_model_path'),'String',ghm_path{val}); % show path for current model
@@ -1094,6 +1095,8 @@ function mGlobe(in_switch)
                         set(findobj('Tag','popup_hydro_model_layer'),'String','total|soilw1|soilw2|weasd');
                     case 11
                         set(findobj('Tag','popup_hydro_model_layer'),'String','total (twland)');
+                    case 12
+                        set(findobj('Tag','popup_hydro_model_layer'),'String','total|soilw1|soilw2|weasd');
                 end
             case 'load_hydro_dem'                                          % Load DEM for Hydro effect (Continental water storage)
                 [name,path] = uigetfile('*.*','Load DEM up to 1° from point of observation');
@@ -1550,28 +1553,33 @@ function mGlobe(in_switch)
                     set(findobj('Tag','text_status'),'String','Please choose your ERA netCDF input file');
                 end
             case 'calc_down_ncep'
-                [ghm_main,~,~] = mGlobe_getModelPath;
-                output_path = fullfile(ghm_main,'NCEP');
-                start_calc = datenum(str2double(get(findobj('Tag','edit_down_time_start_year'),'String')),... % Get date of start
-                    str2double(get(findobj('Tag','edit_down_time_start_month'),'String')),...
-                    str2double(get(findobj('Tag','edit_down_time_start_day'),'String')),...
-                    str2double(get(findobj('Tag','edit_down_time_start_hour'),'String')),0,0);
-                end_calc = datenum(str2double(get(findobj('Tag','edit_down_time_end_year'),'String')),... % Get date of end
-                    str2double(get(findobj('Tag','edit_down_time_end_month'),'String')),...
-                    str2double(get(findobj('Tag','edit_down_time_end_day'),'String')),...
-                    str2double(get(findobj('Tag','edit_down_time_end_hour'),'String')),0,0);
-                step_calc = get(findobj('Tag','popup_down_time_step'),'Value'); % Get time step
-                input_file = get(findobj('Tag','push_down_era_input'),'UserData');
-                if start_calc > end_calc 									% check if starting time > end time
-                    set(findobj('Tag','text_status'),'String','Start time must be <= End time');
-                elseif ~isempty(input_file)
-                    input_path = fileparts(input_file);
-                    set(findobj('Tag','text_status'),'String','Models: conversion starting...');drawnow
-                    mGlobe_convert_NCEP(start_calc,end_calc,step_calc,input_path,output_path) % covert ERA model
-                    pause(5);
-                    set(findobj('Tag','text_status'),'String','Set your conversion options');
+                model_ver = menu('Choose NCEP version','Reanalysis 1 (beta)','Reanalysis 2');
+                if model_ver ~= 0
+                    [ghm_main,~,~] = mGlobe_getModelPath;
+                    output_path = fullfile(ghm_main,'NCEP');
+                    start_calc = datenum(str2double(get(findobj('Tag','edit_down_time_start_year'),'String')),... % Get date of start
+                        str2double(get(findobj('Tag','edit_down_time_start_month'),'String')),...
+                        str2double(get(findobj('Tag','edit_down_time_start_day'),'String')),...
+                        str2double(get(findobj('Tag','edit_down_time_start_hour'),'String')),0,0);
+                    end_calc = datenum(str2double(get(findobj('Tag','edit_down_time_end_year'),'String')),... % Get date of end
+                        str2double(get(findobj('Tag','edit_down_time_end_month'),'String')),...
+                        str2double(get(findobj('Tag','edit_down_time_end_day'),'String')),...
+                        str2double(get(findobj('Tag','edit_down_time_end_hour'),'String')),0,0);
+                    step_calc = get(findobj('Tag','popup_down_time_step'),'Value'); % Get time step
+                    input_file = get(findobj('Tag','push_down_era_input'),'UserData');
+                    if start_calc > end_calc 									% check if starting time > end time
+                        set(findobj('Tag','text_status'),'String','Start time must be <= End time');
+                    elseif ~isempty(input_file)
+                        input_path = fileparts(input_file);
+                        set(findobj('Tag','text_status'),'String','Models: conversion starting...');drawnow
+                        mGlobe_convert_NCEP(start_calc,end_calc,step_calc,input_path,output_path,model_ver) % covert NCEP model
+                        pause(5);
+                        set(findobj('Tag','text_status'),'String','Set your conversion options');
+                    else
+                        set(findobj('Tag','text_status'),'String','Please choose your NCEP netCDF input file.');
+                    end
                 else
-                    set(findobj('Tag','text_status'),'String','Please choose your NCEP netCDF input file.');
+                    set(findobj('Tag','text_status'),'String','Please select NCEP Reanalysis version');
                 end
             % DEM
             case 'load_down_dem_input'                                      % load input dem file                          

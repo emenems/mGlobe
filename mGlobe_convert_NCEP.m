@@ -1,9 +1,9 @@
-function mGlobe_convert_NCEP(start_calc,end_calc,time_resol,input_path,ghc_path)
+function mGlobe_convert_NCEP(start_calc,end_calc,time_resol,input_path,ghc_path,varargin)
 %MGLOBE_CONVERT_NCEP Read and convert NCEP Reanalysis-2 netcdf data
 % Extract required NCEP (surface) model data stored in netcdf
 % format. This function transforms all layers and thus require that all
 % layers (soil moisture 0-10,10-200 and snow) are stored in the same 
-% folder, i.e input_path.
+% folder, i.e, input_path.
 % Data download:
 % http://www.esrl.noaa.gov/psd/data/gridded/data.ncep.reanalysis2.gaussian.html
 % 4-times Daily Values: Soil moisture (0-10cm)
@@ -30,7 +30,8 @@ function mGlobe_convert_NCEP(start_calc,end_calc,time_resol,input_path,ghc_path)
 %                      Example: fullfile('E','models','NCEP');
 %   ghc_path       ... path used for output
 %                      Example: fullfile('GHM','NCEP');
-% 
+%   varargin{1}    ... NCEP Reanalysis number (1|2)
+%                      Example: 2 (= Reanalysis 2 = default)
 % OUTPUT (automatically saved):
 %   out_mat        ... structure array (several matrices) containing:
 %   out_mat.lon    ... longitude (degrees)
@@ -45,7 +46,11 @@ function mGlobe_convert_NCEP(start_calc,end_calc,time_resol,input_path,ghc_path)
 %                                         M.Mikolaj, mikolaj@gfz-potsdam.de
 %                                                                27.11.2014
 %                                                                      v1.0
-
+if nargin > 5
+    model_ver = varargin{1};
+else
+    model_ver = 2;
+end
 %% Time setting
 [year_s,month_s] = datevec(start_calc);                                     % transform matlab time to civil date
 [year_e,month_e] = datevec(end_calc);
@@ -101,7 +106,12 @@ for i = 1:size(time,1);                                                     % cr
     ncid = netcdf.open(file,'NC_NOWRITE');                                  % open netcdf file
     longitude = netcdf.getVar(ncid,1,'double');                             % get latitude                      
     latitude = netcdf.getVar(ncid,0,'double');                              % get longitude
-    time_count = netcdf.getVar(ncid,4,'double');                            % get NCEP time
+    % Switch between Reanalysis 2 and 1
+    if model_ver == 2
+        time_count = netcdf.getVar(ncid,4,'double');                            % get NCEP time
+    else
+        time_count = netcdf.getVar(ncid,2,'double');                            % get NCEP time
+    end
     r = find(time_count == (time(i,7)-datenum(1800,1,1,0,0,0))*24);         % find corresponding time epoch
     if ~isempty(r)                                                          % continue only if such time epoch does exist
         if time_resol == 6
@@ -109,10 +119,23 @@ for i = 1:size(time,1);                                                     % cr
         else
             channel = 5;
         end
-        temp_var = netcdf.getVar(ncid,channel,[0 0 0 r-1],[length(longitude) length(latitude) 1 1],'double'); % temporary variable
-        temp_var(temp_var==32766) = NaN;                                    % remove negative values (no negative values are expected)
-        scale_factor = netcdf.getAtt(ncid,channel,'scale_factor','double'); % get scaling factor
-        add_offset = netcdf.getAtt(ncid,channel,'add_offset','double');     % get offset
+        if model_ver == 1
+            channel = channel - 2;
+            temp_var = netcdf.getVar(ncid,channel,[0 0 r-1],...
+                [length(longitude) length(latitude) 1],'double'); % temporary variable
+        else
+            temp_var = netcdf.getVar(ncid,channel,[0 0 0 r-1],...
+                [length(longitude) length(latitude) 1 1],'double'); % temporary variable
+        end
+        % Remove NaNs
+        temp_var(temp_var==32766) = NaN;                                    % remove NaNs
+        if model_ver == 2
+            scale_factor = netcdf.getAtt(ncid,channel,'scale_factor','double'); % get scaling factor
+            add_offset = netcdf.getAtt(ncid,channel,'add_offset','double');     % get offset
+        else
+            scale_factor = 1;
+            add_offset = 0;
+        end
         temp_var = temp_var'*scale_factor + add_offset;                     % scale
         temp_var(temp_var<0|isnan(temp_var)) = 0;
         out_mat.soilw1 = temp_var;
@@ -133,7 +156,12 @@ for i = 1:size(time,1);                                                     % cr
     ncid = netcdf.open(file,'NC_NOWRITE');                                  % open netcdf file
     longitude = netcdf.getVar(ncid,1,'double');                             % get latitude                      
     latitude = netcdf.getVar(ncid,0,'double');                              % get longitude
-    time_count = netcdf.getVar(ncid,4,'double');                            % get NCEP time
+    % Switch between Reanalysis 2 and 1
+    if model_ver == 2
+        time_count = netcdf.getVar(ncid,4,'double');                            % get NCEP time
+    else
+        time_count = netcdf.getVar(ncid,2,'double');                            % get NCEP time
+    end
     r = find(time_count == (time(i,7)-datenum(1800,1,1,0,0,0))*24);         % find corresponding time epoch
     if ~isempty(r)                                                          % continue only if such time epoch does exist
         if time_resol == 6
@@ -141,10 +169,22 @@ for i = 1:size(time,1);                                                     % cr
         else
             channel = 5;
         end                                                                 % continue only if such time epoch does exist
-        temp_var = netcdf.getVar(ncid,channel,[0 0 0 r-1],[length(longitude) length(latitude) 1 1],'double'); % temporary variable
+        if model_ver == 1
+            channel = channel - 2;
+            temp_var = netcdf.getVar(ncid,channel,[0 0 r-1],...
+                [length(longitude) length(latitude) 1],'double'); % temporary variable
+        else
+            temp_var = netcdf.getVar(ncid,channel,[0 0 0 r-1],...
+                [length(longitude) length(latitude) 1 1],'double'); % temporary variable
+        end
         temp_var(temp_var==32766) = NaN;                                    % remove negative values (no negative values are expected)
-        scale_factor = netcdf.getAtt(ncid,channel,'scale_factor','double'); % get scaling factor
-        add_offset = netcdf.getAtt(ncid,channel,'add_offset','double');     % get offset
+        if model_ver == 2
+            scale_factor = netcdf.getAtt(ncid,channel,'scale_factor','double'); % get scaling factor
+            add_offset = netcdf.getAtt(ncid,channel,'add_offset','double');     % get offset
+        else
+            scale_factor = 1;
+            add_offset = 0;
+        end
         temp_var = temp_var'*scale_factor + add_offset;                     % scale
         temp_var(temp_var<0|isnan(temp_var)) = 0;
         out_mat.soilw2 = temp_var;
@@ -172,8 +212,13 @@ for i = 1:size(time,1);                                                     % cr
         end  
         temp_var = netcdf.getVar(ncid,channel,[0 0 r-1],[length(longitude) length(latitude) 1],'double'); % temporary variable
         temp_var(temp_var==32766) = NaN;                                    % remove negative values (no negative values are expected)
-        scale_factor = netcdf.getAtt(ncid,channel,'scale_factor','double'); % get scaling factor
-        add_offset = netcdf.getAtt(ncid,channel,'add_offset','double');     % get offset
+        if model_ver == 2
+            scale_factor = netcdf.getAtt(ncid,channel,'scale_factor','double'); % get scaling factor
+            add_offset = netcdf.getAtt(ncid,channel,'add_offset','double');     % get offset
+        else
+            scale_factor = 1;
+            add_offset = 0;
+        end
         temp_var = temp_var'*scale_factor + add_offset;                     % scale
         temp_var(temp_var<0|isnan(temp_var)) = 0;
         out_mat.weasd = temp_var;
@@ -190,17 +235,21 @@ for i = 1:size(time,1);                                                     % cr
     end
     set(findobj('Tag','text_status'),'String',out_message); drawnow         % write status message 
     if time_resol == 6                                                      % create new output file name (monthly or hourly data)
-            nazov = fullfile(ghc_path,sprintf('NCEP_REAN2_M_%4d%02d.mat',time(i,1),time(i,2))); 
+        nazov = fullfile(ghc_path,sprintf('NCEP_REAN%d_M_%4d%02d.mat',...
+                model_ver,time(i,1),time(i,2))); 
     else
-            nazov = fullfile(ghc_path,sprintf('NCEP_REAN2_6H_%4d%02d%02d_%02d.mat',time(i,1),time(i,2),time(i,3),time(i,4)));
+        nazov = fullfile(ghc_path,sprintf('NCEP_REAN%d_6H_%4d%02d%02d_%02d.mat',...
+                model_ver,time(i,1),time(i,2),time(i,3),time(i,4)));
     end
     save(nazov,'out_mat');                                                  % save create matrix
     
     catch
         if time_resol == 6
-            out_message = sprintf('Models: Warning: could not convert data for NCEP_REAN2_M_%4d%02d.mat',time(i,1),time(i,2)); 
+            out_message = sprintf('Models: Warning: could not convert data for NCEP_REAN%d_M_%4d%02d.mat',...
+                            model_ver,time(i,1),time(i,2)); 
         else
-            out_message = sprintf('Models: Warning: could not convert data for NCEP_REAN2_6H_%4d%02d%02d_%02d.mat!',time(i,1),time(i,2),time(i,3),time(i,4));
+            out_message = sprintf('Models: Warning: could not convert data for NCEP_REAN%d_6H_%4d%02d%02d_%02d.mat!',...
+                            model_ver,time(i,1),time(i,2),time(i,3),time(i,4));
         end
         set(findobj('Tag','text_status'),'String',out_message); drawnow     % write warning message
         fprintf(out_message);fprintf('\n');

@@ -101,11 +101,14 @@ for j = 1:length(model_calc);												% loop for each model
                    model_name = 'GRACE'; 
                    ghc_path = fullfile(model_folder,'LAND');
                 case 10 
-                   model_name = 'NCEP'; 
+                   model_name = 'NCEP2'; 
                    ghc_path = fullfile(model_folder,'NCEP');
                 case 11 
                    model_name = 'MERRA2'; 
                    ghc_path = fullfile(model_folder,'MERRA2');
+                case 12 
+                   model_name = 'NCEP1'; 
+                   ghc_path = fullfile(model_folder,'NCEP');
             end
             if isempty(INCLUDE_file)										% inclusion polygon
                 inc = 'All';
