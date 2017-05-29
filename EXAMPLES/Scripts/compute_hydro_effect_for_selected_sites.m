@@ -46,7 +46,7 @@ end
 
 %% Compute
 if ischar(select_model)														% use 'All' models if select_model = 'All'
-    model_calc = [1 2 3 5 6 7 10 11];                                       % only daily models are supported
+    model_calc = [1 2 3 5 6 7 10 11 12 13];                                 % only daily models are supported
 else
     model_calc = select_model;												% use only selected model
 end
@@ -109,6 +109,9 @@ for j = 1:length(model_calc);												% loop for each model
                 case 12 
                    model_name = 'NCEP1'; 
                    ghc_path = fullfile(model_folder,'NCEP');
+                case 13  
+                   model_name = 'NOAH025v21';  
+                   ghc_path = fullfile(model_folder,'NOAH025v21');
             end
             if isempty(INCLUDE_file)										% inclusion polygon
                 inc = 'All';

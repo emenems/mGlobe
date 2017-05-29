@@ -1,10 +1,13 @@
 %% Use this script to 
-% 1. Update list for wget/DownThemAll data downloading:
+% 1. For Windows users: Update list for wget/DownThemAll data downloading.
 %    The aim is to remove all files that are not of interest. The NASA SSW 
 %    portal generates file containing all available hours. If the user, 
 %    however, wishes to compute GHE only for daily data than the NASA SSW 
 %	 URL list needs to  be modified so only files of interest are 
 %	 downloaded (e.g., at 12:00 each day).
+%	 Does not work with GLDASv2.1!
+%	 In Linux/Unix use 'grep' for list reduction 
+%	 Example for 12:00 only: grep '1200' input_list.txt > output.txt)
 %
 % 2. Convert the downloaded files:
 %    Use this part to convert the downloaded data without using GUI.
@@ -40,8 +43,10 @@ date_start = [2015 08 01 12 00 00]; % yyyy mm dd HH MM SS
 date_stop = [2015 08 08 12 00 00]; % yyyy mm dd HH MM SS
 % Time resolution switch
 step_calc = 4; % 2 => 6 hours, 3=> 12 hours, ...
-% Set folder name containing all NetCDF files
+% Set folder name containing all NetCDF files. Use the 
+% model_ver for GLDAS NOAH to switch between 1 or 2(.1)!
 input_path = 'd:\GlobalModel\MERRA2\';
+model_ver = 1; % 1 or 2. will be used only if GLDAS NOAH model is converted
 % Set ONE file name (just to generate correct input file name for all
 % required time steps)
 input_file = 'MERRA2_400.tavg1_2d_lnd_Nx.20161218.nc4.nc';
@@ -105,7 +110,7 @@ switch task_switch
         % Get current folder to switch back after conversion
         currentFolder = pwd;
         % Switch folders to mGlobe
-        cd(mglobe_folder)                                               % change folder to mGlobe
+        cd(mglobe_folder) % change folder to mGlobe
         % Get input model number (switch) and set model output folder
         switch input_file(1:11)
             case 'GLDAS_CLM10'
@@ -115,8 +120,13 @@ switch task_switch
                 model = 2;
                 ghc_path = fullfile(output_folder,'MOS'); 
             case 'GLDAS_NOAH0'
-                model = 3;
-                ghc_path = fullfile(output_folder,'NOAH025');
+				if model_ver == 1
+					model = 3;
+					ghc_path = fullfile(output_folder,'NOAH025');
+				elseif model_ver == 2
+					model = 8;
+					ghc_path = fullfile(output_folder,'NOAH025v21');
+				end
             case 'GLDAS_NOAH1'
                 model = 4;
                 ghc_path = fullfile(output_folder,'NOAH10');
@@ -140,7 +150,8 @@ switch task_switch
                 ghc_path = fullfile(output_folder,'OTHER');
         end
         % Call conversion script
-        mGlobe_convert_GLDAS(datenum(date_start),datenum(date_stop),model,step_calc,ghc_path,input_path,input_file)
+        mGlobe_convert_GLDAS(datenum(date_start),datenum(date_stop),...
+							model,step_calc,ghc_path,input_path,input_file);
         % change folder back
         cd(currentFolder);           
 end

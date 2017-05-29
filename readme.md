@@ -9,7 +9,7 @@ This toolbox allows user to compute:
 No test data were uploaded with this code because of
 provider's conditions of use.   
 The links to all supported models
-are listed in the [user manual](https://github.com/emenems/mGlobe/blob/master/mGlobe_USER_MANUAL.pdf) file. Please read this
+are listed in the [user manual](https://github.com/emenems/mGlobe/blob/master/USER_MANUAL/mGlobe_user_guide.md) file. Please read this
 file before using mGlobe.
 
 #### Citation:

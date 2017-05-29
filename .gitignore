@@ -3,9 +3,6 @@
 /GRACE/*/*.mat
 /OBPM/*/*.mat
 
-# Users manual
-/USER_MANUAL/*
-
 # Default output files
 output.*
 

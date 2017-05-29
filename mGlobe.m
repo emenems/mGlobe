@@ -312,7 +312,7 @@ function mGlobe(in_switch)
                     'Style','Text','String','Model');
         uicontrol(p1_5,'units','characters','Position',[13.6 2.769 27.6 1.692],...
                     'Style','Popupmenu','Tag','popup_hydro_model',...
-                    'String','GLDAS/CLM|GLDAS/MOS|GLDAS/NOAH (0.25°)|GLDAS/NOAH (1°)|GLDAS/VIC|ERA Interim|MERRA (assimilation)|Other|GRACE|NCEP Reanalysis-2|MERRA2|NCEP Reanalysis-1',...
+                    'String','GLDAS/CLM|GLDAS/MOS|GLDAS/NOAH (0.25°)|GLDAS/NOAH (1°)|GLDAS/VIC|ERA Interim|MERRA (assimilation)|Other|GRACE|NCEP Reanalysis-2|MERRA2|NCEP Reanalysis-1|GLDASv2.1/NOAH (0.25°)',...
                     'Value',3,'BackgroundColor','white','CallBack','mGlobe select_hydro_model');
         uicontrol(p1_5,'units','characters','Position',[67.2 3 8 1.077],...
                     'Style','Text','Tag','push_hydro_model_path',...
@@ -557,7 +557,7 @@ function mGlobe(in_switch)
                     'Style','Text','String','/GHM/NOAH025/',...
                     'Tag','text_down_gldas_path');
         uicontrol(p3_1,'units','characters','Position',[18.8 0.8 25 1.692],...
-                    'Style','Popupmenu','String','GLDAS/CLM|GLDAS/MOS|GLDAS/NOAH025|GLDAS/NOAH10|GLDAS/VIC|MERRA Land|MERRA2 Land',...
+                    'Style','Popupmenu','String','GLDAS/CLM|GLDAS/MOS|GLDAS/NOAH025|GLDAS/NOAH10|GLDAS/VIC|MERRA Land|MERRA2 Land|GLDASv2.1/NOAH025',...
                     'Tag','popup_down_gldas_model','Value',3,'BackgroundColor','white',...
                     'CallBack','mGlobe select_down_model');
         uicontrol(p3_1,'units','characters','Position',[49.6 1.11 12.8 1.08],...
@@ -1058,7 +1058,8 @@ function mGlobe(in_switch)
                             fullfile(ghm_main,'NOAH025'),fullfile(ghm_main,'NOAH10'),...
                             fullfile(ghm_main,'VIC'),fullfile(ghm_main,'ERA'),fullfile(ghm_main,'MERRA'),...
                             fullfile(ghm_main,'OTHER'),fullfile(grace_main,'LAND'),fullfile(ghm_main,'NCEP'),...
-                            fullfile(ghm_main,'MERRA2'),fullfile(ghm_main,'NCEP')};
+                            fullfile(ghm_main,'MERRA2'),fullfile(ghm_main,'NCEP'),...
+                            fullfile(ghm_main,'NOAH025v21')};
                 val = get(findobj('Tag','popup_hydro_model'),'Value');
                 set(findobj('Tag','push_hydro_model_path'),'UserData',ghm_path{val}); % each button stores data about the path to model data
                 set(findobj('Tag','text_hydro_model_path'),'String',ghm_path{val}); % show path for current model
@@ -1097,6 +1098,8 @@ function mGlobe(in_switch)
                         set(findobj('Tag','popup_hydro_model_layer'),'String','total (twland)');
                     case 12
                         set(findobj('Tag','popup_hydro_model_layer'),'String','total|soilw1|soilw2|weasd');
+                    case 13
+                        set(findobj('Tag','popup_hydro_model_layer'),'String','total|soilm1|soilm2|soilm3|soilm4|swe');
                 end
             case 'load_hydro_dem'                                          % Load DEM for Hydro effect (Continental water storage)
                 [name,path] = uigetfile('*.*','Load DEM up to 1° from point of observation');
@@ -1488,9 +1491,13 @@ function mGlobe(in_switch)
                     case 7
                         set(findobj('Tag','push_down_gldas_path'),'UserData',fullfile(ghm_main,'MERRA2'));
                         set(findobj('Tag','text_down_gldas_path'),'String',fullfile(ghm_main,'MERRA2'));
+                    case 8
+                        set(findobj('Tag','push_down_gldas_path'),'UserData',fullfile(ghm_main,'NOAH025v21'));
+                        set(findobj('Tag','text_down_gldas_path'),'String',fullfile(ghm_main,'NOAH025v21'));
                 end
             case 'calc_down_gldas'
-                [name,path] = uigetfile('*.nc','Choose ONE input GLDAS or MERRA netCDF file'); % select ERA interim netcdf (*.nc) input file
+                [name,path] = uigetfile({'*.nc;*.nc4','NetCDF (*.nc,*.nc4)'},...
+                            'Choose ONE input GLDAS or MERRA netCDF file'); % select MERRA/GLDAS interim netcdf (*.nc) input file
                 if name == 0                                                
                     set(findobj('Tag','text_status'),'String','You must select one netcdf file');
                 else
@@ -1511,7 +1518,7 @@ function mGlobe(in_switch)
                         set(findobj('Tag','text_status'),'String','Start time must be <= End time');
                     else
                         set(findobj('Tag','text_status'),'String','Models: Starting the conversion...');drawnow
-                        if model_version <=7 
+                        if model_version <=8 
                             mGlobe_convert_GLDAS(start_calc,end_calc,model_version,step_calc,output_path,input_path,input_file);
                         end
                         set(findobj('Tag','text_status'),'String','Conversion completed');
