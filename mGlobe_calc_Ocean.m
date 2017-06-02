@@ -22,7 +22,8 @@ function mGlobe_calc_Ocean(Input,output_file,output_file_type,start_calc,end_cal
 %   model_calc        ... Model intern identification/switch 
 %						  1 = ECCO1, 2 = OTHER, 3 = GRACE,
 %					      4 = ECCO2, 5 = OMCT_oba, 6 = OMCT_ocn,
-%						  7 = OMCT_atm.
+%						  7 = OMCT_atm, 8 = OMCT6_oba, 9 = OMCT6_ocn,
+%						  10 = OMCT6_atm.
 %						  Example: 1
 %   ghc_treshold      ... minimal spherical distance of hydro.masses to the 
 %                         point of observation in degrees
@@ -202,13 +203,22 @@ for i = 1:size(time,1);
             model_name = 'ECCO2';
             obp_path = ghc_path;
         case 5 
-            model_name = 'OMCT_oba';
+            model_name = 'OMCT_oba_6H';
             obp_path = ghc_path;
         case 6 
-            model_name = 'OMCT_ocn';
+            model_name = 'OMCT_ocn_6H';
             obp_path = ghc_path;
         case 7 
-            model_name = 'OMCT_atm';
+            model_name = 'OMCT_atm_6H';
+            obp_path = ghc_path;
+        case 8 
+            model_name = 'OMCT6_oba_3H';
+            obp_path = ghc_path;
+        case 9 
+            model_name = 'OMCT6_ocn_3H';
+            obp_path = ghc_path;
+        case 10 
+            model_name = 'OMCT6_atm_3H';
             obp_path = ghc_path;
     end
     switch model_version
@@ -233,7 +243,7 @@ for i = 1:size(time,1);
                 nazov = fullfile(obp_path,sprintf('%s_D_%04d%02d%02d_%02d.mat',model_name,time(i,1),time(i,2),time(i,3),time(i,4)));
             end
         otherwise
-            nazov = fullfile(obp_path,sprintf('%s_6H_%04d%02d%02d_%02d.mat',model_name,time(i,1),time(i,2),time(i,3),time(i,4)));
+            nazov = fullfile(obp_path,sprintf('%s_%04d%02d%02d_%02d.mat',model_name,time(i,1),time(i,2),time(i,3),time(i,4)));
     end
     
     try

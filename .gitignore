@@ -13,3 +13,5 @@ octave-workspace
 # Not matlab scripts
 /EXAMPLES/Scripts/era_interim/*.py
 
+# Unit test (not complete yet)
+/test/*

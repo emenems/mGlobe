@@ -124,7 +124,7 @@ All above mentioned functions and files must be located in the same folder (/mGl
 		* LAND
 		* OCEAN
 * mGlobe/OBPM/
-	* ECCO1 | ECCO2 | OMCT | OTHER
+	* ECCO1 | ECCO2 | OMCT | OMCT6 | OTHER
 
 All test results, inputs and examples how to run *mGlobe* without GUI are stored in the /EXAMPLES/ folder (optional). Digital elevation models and atmospheric models (ERA and MERRA) can be stored in arbitrary folders.
 
@@ -166,8 +166,11 @@ The computation of the gravity response to large scale effects requires the conv
     * Product: *OBPano* (ocean bottom pressure anomaly)
 * ECCO2 daily: ftp://ecco2.jpl.nasa.gov/data1/cube/cube92/lat_lon/quart_90S_90N/PHIBOT.nc/
     * Product: *Bottom Pressure Pot. Anomaly*
-* OMCT 6-hourly: ftp://podaac-ftp.jpl.nasa.gov/allData/grace/L1B/GFZ/AOD1B/RL05
+* OMCT RL05 6-hourly: ftp://isdcftp.gfz-potsdam.de/grace/Level-1B/GFZ/AOD/RL05
     * Products: *atm* (atmospheric part), *ocn* (oceanic part), *oba* (ocean bottom anomaly)
+* OMCT RL06 3-hourly: ftp://isdcftp.gfz-potsdam.de/grace/Level-1B/GFZ/AOD/RL06/
+    * Products: *atm* (atmospheric part), *ocn* (oceanic part), *oba* (ocean bottom anomaly)
+    * The conversion of RL06 is very slow, especially when using Octave (10x slower than in Maltab. Needs to be optimized)!
 
 #### Atmospheric models
 * ERA Interim 6 hourly model values
@@ -446,10 +449,10 @@ result is stored in the /OBPM/ECCO1/ folder.
     * : `KalmanFilter/kf080_YYYY/n10days_XX_YY/`
     * Due to the latency of the model, you may need to rename the folder and the name of the last file to its full year equivalent, e.g. from `KalmanFilter/kf080_2014/n10day_28_33/OBPano_08_08.06480_07920_012.cdf` to `KalmanFilter/kf080_2014/n10day_28_37/OBPano_08_08.06480_08880_012.cdf`.
 
-#### Example: convert the OMCT (oba) model
+#### Example: convert the OMCT RL05 (oba) model
 This function allows the conversion of AOD1B products, i.e. OMCT model, to grids. User can select the ’OMCT oba’ (total ocean bottom pressure anomalies), ’OMCT ocn’ (contribution of the ocean water column) or ’OMCT atm’ (contribution of the atmosphere (ECMWF)) layer.
 * The spherical harmonics will be converted to grid with spatial resolution of 1 degree
-> Keep in mind that the real resolution is lower as the maximal degree of the AOD1B products equals 100 (all degree coefficients are utilized, i.e. including 0 and 1).
+> Keep in mind that the real resolution is lower as the maximal degree of the AOD1B RL05 products equals 100 (all degree coefficients are utilized, i.e. including 0 and 1).
 
 The conversion is based on the paper by [Wahr et al., (1998)](http://onlinelibrary.wiley.com/doi/10.1029/JB090iB11p09363/abstract;jsessionid=AE6134DBC552053212C1A8A8994FB93B.f03t02): *Time variability of the Earth’s gravity field: Hydrological and oceani effects and their possible detection using GRACE*. Journal of Geophysical Research, vol. 103, no. B12.   
 > The `mGlobe_DATA_OceanGrid.mat` grid is used to set all grid cells over the continents to NaN.   

@@ -928,7 +928,7 @@ function mGlobe(in_switch)
                     'String','Model version:');
         uicontrol(p5_3,'units','characters','Position',[18,0.238+4.17,40,1.769],...
                     'Style','Popupmenu','units','characters','BackgroundColor','white',...
-                    'String','ECCO-JPL (conversion: *.txt for monthly and *.cdf for 12 hours)|Other (calculate only)|GRACE (calculate only)|ECCO2_beta (conversion: *.nc)|OMCT_oba (conversion: *.txt AOD1B spherical harmonics)|OMCT_ocn (conversion: *.txt AOD1B spherical harmonics)|OMCT_atm (conversion: *.txt AOD1B spherical harmonics)','UserData',[],...
+                    'String','ECCO-JPL (conversion: *.txt for monthly and *.cdf for 12 hours)|Other (calculate only)|GRACE (calculate only)|ECCO2_beta (conversion: *.nc)|OMCT_oba (conversion: *.txt AOD1B spherical harmonics)|OMCT_ocn (conversion: *.txt AOD1B spherical harmonics)|OMCT_atm (conversion: *.txt AOD1B spherical harmonics)|OMCT6_oba (conversion: *.txt AOD1B spherical harmonics)|OMCT6_ocn (conversion: *.txt AOD1B spherical harmonics)|OMCT6_atm (conversion: *.txt AOD1B spherical harmonics)','UserData',[],...
                     'Tag','popup_ocean_load_convert_model','CallBack','mGlobe popup_ocean_model');
         uicontrol(p5_3,'units','characters','Position',[18,2.2,40,1.769],...
                     'Style','Popupmenu','units','characters','BackgroundColor','white',...
@@ -1738,6 +1738,12 @@ function mGlobe(in_switch)
                         [name,path] = uigetfile('*.*','Choose your input file: e.g. AOD1B_2009-01-01_X_05.asc');
                     case 7
                         [name,path] = uigetfile('*.*','Choose your input file: e.g. AOD1B_2009-01-01_X_05.asc');
+                    case 8
+                        [name,path] = uigetfile('*.*','Choose your input file: e.g. AOD1B_2009-01-01_X_06.asc');
+                    case 9
+                        [name,path] = uigetfile('*.*','Choose your input file: e.g. AOD1B_2009-01-01_X_06.asc');
+                    case 10
+                        [name,path] = uigetfile('*.*','Choose your input file: e.g. AOD1B_2009-01-01_X_06.asc');
                 end
                 if name == 0
                     set(findobj('Tag','push_ocean_load_convert_input'),'UserData',[]);
@@ -1804,9 +1810,24 @@ function mGlobe(in_switch)
                     case 4
                         set(findobj('Tag','text_ocean_convert_output'),'UserData',fullfile(obpm_main,'ECCO2'));
                         set(findobj('Tag','text_ocean_convert_output'),'String',fullfile(obpm_main,'ECCO2'));
-                    otherwise
+                    case 5
                         set(findobj('Tag','text_ocean_convert_output'),'UserData',fullfile(obpm_main,'OMCT'));
                         set(findobj('Tag','text_ocean_convert_output'),'String',fullfile(obpm_main,'OMCT'));
+                    case 6
+                        set(findobj('Tag','text_ocean_convert_output'),'UserData',fullfile(obpm_main,'OMCT'));
+                        set(findobj('Tag','text_ocean_convert_output'),'String',fullfile(obpm_main,'OMCT'));
+                    case 7
+                        set(findobj('Tag','text_ocean_convert_output'),'UserData',fullfile(obpm_main,'OMCT'));
+                        set(findobj('Tag','text_ocean_convert_output'),'String',fullfile(obpm_main,'OMCT'));
+                    case 8
+                        set(findobj('Tag','text_ocean_convert_output'),'UserData',fullfile(obpm_main,'OMCT6'));
+                        set(findobj('Tag','text_ocean_convert_output'),'String',fullfile(obpm_main,'OMCT6'));
+                    case 9
+                        set(findobj('Tag','text_ocean_convert_output'),'UserData',fullfile(obpm_main,'OMCT6'));
+                        set(findobj('Tag','text_ocean_convert_output'),'String',fullfile(obpm_main,'OMCT6'));
+                    case 10
+                        set(findobj('Tag','text_ocean_convert_output'),'UserData',fullfile(obpm_main,'OMCT6'));
+                        set(findobj('Tag','text_ocean_convert_output'),'String',fullfile(obpm_main,'OMCT6'));
                 end
             case 'load_ocean_convert_calc'                                  % Convert ECCO1/2 ocean bottom pressure models to supported file format
                 file = get(findobj('Tag','push_ocean_load_convert_input'),'UserData');

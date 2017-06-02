@@ -43,7 +43,7 @@ end
 
 %% Compute
 if ischar(select_model)														% use 'All' models if select_model = 'All'
-    model_calc = [1 4 5 6 7];                                               % only daily models are supported
+    model_calc = [1 4 5 6 7 8 9 10];                                        % only daily models are supported
 else
     model_calc = select_model;												% use only selected model
 end
@@ -85,6 +85,15 @@ for j = 1:length(model_calc);												% loop for each model
                 case 7 
                    model_name = 'OMCT_atm'; 
                    ghc_path = fullfile(model_folder,'OMCT');
+                case 8 
+                   model_name = 'OMCT6_oba'; 
+                   ghc_path = fullfile(model_folder,'OMCT6');
+                case 9 
+                   model_name = 'OMCT6_ocn'; 
+                   ghc_path = fullfile(model_folder,'OMCT6');
+                case 10 
+                   model_name = 'OMCT6_atm'; 
+                   ghc_path = fullfile(model_folder,'OMCT6');
             end
             output_file = fullfile(output_file_prefix,sprintf('%s_%02d%04d_%02d%04d_%s_%s_mf%1d_tre%03d.txt',... % create output file name
                 char(sites{1,1}(i)),cmonth1,cyear1,cmonth2,cyear2,time_resol,model_name,mean_field,ghc_treshold*100));
