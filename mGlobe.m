@@ -280,7 +280,7 @@ function mGlobe(in_switch)
                     'mGlobe load_hydro_dem');
         uicontrol(p1_3,'units','characters','Position',[13.6,0.538,77.6,1.769],...
                     'Style','Text','Tag','text_hydro_topo_dem',...
-                    'String','If required, load DEM up to 1.05° from gravimeter');
+                    'String','If required, load DEM up to 1.05 deg from gravimeter');
         uicontrol(p1_3,'units','characters','Position',[91.2 0.692 12 1.769],...
                     'Style','Pushbutton','units','characters',...
                     'String','Show','UserData',[],...
@@ -307,6 +307,10 @@ function mGlobe(in_switch)
         uicontrol(p1_4,'units','characters','Position',[28 0.231 22.8 1.692],...
                     'Style','Checkbox','Tag','check_hydro_average',...
                     'String','subtract average','Value',0);
+        uicontrol(p1_4,'units','characters','Position',[46 0.231 13.5 1.692],...
+                    'Style','Pushbutton','units','characters',...
+                    'String','SHP (optional)','UserData',0,...
+                    'Tag','push_hydro_load_shp','CallBack','mGlobe push_hydro_shp');
         % Hydrological model
         uicontrol(p1_5,'units','characters','Position',[0.6 3.0 7 1.077],...
                     'Style','Text','String','Model');
@@ -780,6 +784,10 @@ function mGlobe(in_switch)
         uicontrol(p4_4,'units','characters','Position',[28 0.231 22.8 1.692],...
                     'Style','Checkbox','Tag','check_atmo_average',...
                     'String','subtract average','Value',0);
+%         uicontrol(p4_4,'units','characters','Position',[46 0.231 13.5 1.692],...
+%                     'Style','Pushbutton','units','characters',...
+%                     'String','SHP (optional)','UserData',0,...
+%                     'Tag','push_atmo_load_shp','CallBack','mGlobe push_atmo_shp');
         % ECMWF data
         uicontrol(p4_3,'units','characters','Position',[1.8 6.923 41.4 1.077],...
                     'Style','Text','String','Pressure levels (37 for ERA, MERRA 42)');
@@ -979,6 +987,10 @@ function mGlobe(in_switch)
         uicontrol(p5_4,'units','characters','Position',[28 0.231 22.8 1.692],...
                     'Style','Checkbox','Tag','check_ocean_average',...
                     'String','subtract average','Value',0);
+%         uicontrol(p5_4,'units','characters','Position',[46 0.231 13.5 1.692],...
+%                     'Style','Pushbutton','units','characters',...
+%                     'String','SHP (optional)','UserData',0,...
+%                     'Tag','push_ocean_load_shp','CallBack','mGlobe push_ocean_shp');
         % Set model paths
         mGlobe('select_hydro_model');
         mGlobe('select_down_model');
@@ -1102,13 +1114,34 @@ function mGlobe(in_switch)
                         set(findobj('Tag','popup_hydro_model_layer'),'String','total|soilm1|soilm2|soilm3|soilm4|swe');
                 end
             case 'load_hydro_dem'                                          % Load DEM for Hydro effect (Continental water storage)
-                [name,path] = uigetfile('*.*','Load DEM up to 1° from point of observation');
+                [name,path] = uigetfile('*.*','Load DEM up to 1 deg from point of observation');
                 if name == 0                                               % If cancelled-> no DEM used
                     set(findobj('Tag','push_hydro_topo_dem'),'UserData',[]); % empty if no data selected
                     set(findobj('Tag','text_hydro_topo_dem'),'String','No DEM used');
                 else
                     set(findobj('Tag','push_hydro_topo_dem'),'UserData',[path,name]); % store the full file name
                     set(findobj('Tag','text_hydro_topo_dem'),'String',name); % display the file name (without path)
+                end
+            case 'push_hydro_shp'                                          % Load Coastline shapefile
+                [name,path] = uigetfile('*.*','Load SHP for points up to 1 deg from point of observation');
+                if name == 0                                               % If cancelled-> no Shapefile
+                    set(findobj('Tag','push_hydro_load_shp'),'UserData',0); % empty if no data selected
+                else
+                    set(findobj('Tag','push_hydro_load_shp'),'UserData',[path,name]); % store the full file name
+                end
+            case 'push_ocean_shp'                                          % Load Coastline shapefile
+                [name,path] = uigetfile('*.*','Load SHP for points up to 1 deg from point of observation');
+                if name == 0                                               % If cancelled-> no Shapefile
+                    set(findobj('Tag','push_ocean_load_shp'),'UserData',0); % empty if no data selected
+                else
+                    set(findobj('Tag','push_ocean_load_shp'),'UserData',[path,name]); % store the full file name
+                end
+            case 'push_atmo_shp'                                          % Load Coastline shapefile
+                [name,path] = uigetfile('*.*','Load SHP for points up to 1 deg from point of observation');
+                if name == 0                                               % If cancelled-> no Shapefile
+                    set(findobj('Tag','push_atmo_load_shp'),'UserData',0); % empty if no data selected
+                else
+                    set(findobj('Tag','push_atmo_load_shp'),'UserData',[path,name]); % store the full file name
                 end
             case 'load_hydro_show'                                          % Show loaded DEM + point of observation
                 dem_path = get(findobj('Tag','push_hydro_topo_dem'),'UserData'); % first, get full file name
@@ -1200,6 +1233,8 @@ function mGlobe(in_switch)
                 ghc_treshold = str2double(get(findobj('Tag','edit_hydro_treshold'),'String')); % Get calculation (distance) threshold
                 ghc_path = get(findobj('Tag','push_hydro_model_path'),'UserData');
                 name = 1;
+                shp_file = get(findobj('Tag','push_hydro_load_shp'),'UserData');
+                
                 if model_calc == 8                                          % prompt user to pick OTHER model (fixed prefix)
                     set(findobj('Tag','text_status'),'String','You have chosen OTHER model => pick file with *.mat grid, first TEN letters will be used as a PREFIX (e.g. WGHM05_All)');
                     [name,~] = uigetfile(ghc_path,'Pick file with *.mat grid, first TEN letters will be used as a PREFIX123 for data loading (e.g. WGHM05_All)');
@@ -1233,9 +1268,13 @@ function mGlobe(in_switch)
                 end
                 if (ghc_treshold > 1 || ghc_treshold < 0.05) || (start_calc > end_calc) || (sum(double(name)) == 0) % warn user that the threshold must be within 0.05-1 degree and the starting date must be < than the end date
                     set(findobj('Tag','text_status'),'String','Threshold must be within <0.05,1.00> degree, start time <= end time and model prefix set correctly');
-                elseif exist('mGlobe_DATA_dgE_Hydro.txt')==2 && exist('mGlobe_DATA_OceanGrid.mat')==2
+                elseif exist('mGlobe_DATA_dgE_Hydro.txt','file')==2 && exist('mGlobe_DATA_OceanGrid.mat','file')==2
                     set(findobj('Tag','text_status'),'String','Hydro: starting the computation...');drawnow
-                    mGlobe_calc_Hydro(Input,output_file,output_file_type,DEM_file,start_calc,end_calc,step_calc,exclude_calc,model_calc,model_layer,mass_conserv,ghc_treshold,ghc_path,subtract_average,INCLUDE_file); % calculate the hydrological effect
+                    mGlobe_calc_Hydro(Input,output_file,output_file_type,DEM_file,...
+                                        start_calc,end_calc,step_calc,exclude_calc,...
+                                        model_calc,model_layer,mass_conserv,...
+                                        ghc_treshold,ghc_path,subtract_average,...
+                                        INCLUDE_file,shp_file); % calculate the hydrological effect
                     pause(5)                                               % wait 5 sec, than write message
                     set(findobj('Tag','text_status'),'String','Set the global hydrological effect');
                 else
@@ -1902,6 +1941,7 @@ function mGlobe(in_switch)
                 pressure_time_series{2} = {str2double(get(findobj('Tag','edit_ocean_load_time_series_time'),'String'))};
                 pressure_time_series{3} = {str2double(get(findobj('Tag','edit_ocean_load_time_series_press'),'String'))};
                 name = 1;
+                shp_file = get(findobj('Tag','push_ocean_load_shp'),'UserData');
                 if model_version == 2                                       % prompt user to select OTHER model (fixed prefix is required)
                     set(findobj('Tag','text_status'),'String','You have chosen OTHER model => pick file with *.mat grid, first TEN letters will be used as a PREFIX (e.g. MODEL_1234)');
                     [name,~] = uigetfile(ghc_path,'Pick file with *.mat grid, first TEN letters will be used as a PREFIX for data loading (e.g. MODEL_1234)');
@@ -1931,7 +1971,10 @@ function mGlobe(in_switch)
                     set(findobj('Tag','text_status'),'String','Threshold must be within <0.05,1.00> degree, start time <= end time and model set correctly');
                 elseif exist('mGlobe_DATA_dgE_Hydro.txt','file')==2 && exist('mGlobe_DATA_OceanGrid.mat','file')==2
                     set(findobj('Tag','text_status'),'String','Ocean: starting the computation...');drawnow
-                    mGlobe_calc_Ocean(Input,output_file,output_file_type,start_calc,end_calc,step_calc,ghc_treshold,ghc_path,model_version,subtract_average,mean_field,pressure_time_series); % start the NTOL computation
+                    mGlobe_calc_Ocean(Input,output_file,output_file_type,start_calc,end_calc,...
+                                    step_calc,ghc_treshold,ghc_path,model_version,...
+                                    subtract_average,mean_field,...
+                                    pressure_time_series,shp_file); % start the NTOL computation
                     pause(5)                                                % wait 5 sec, than write original message
                     set(findobj('Tag','text_status'),'String','Set your non-tidal ocean loading effect');
                 else

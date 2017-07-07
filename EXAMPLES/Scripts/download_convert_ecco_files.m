@@ -27,7 +27,7 @@ close_after_comutation = 0;
 %% ECCO FTP server settings
 % set FTP connection to ECCO1
 ftp_ecco1 = 'snowwhite.jpl.nasa.gov';
-remote_dir1 = 'data4/KalmanFilter';
+remote_dir1 = 'NearRealTime/KalmanFilter';
 username1 = 'anonymous';
 password1 = 'anonymous';
 ecco1_subfolder = 'kf080h_'; % kalman filter, version dependent. tested for *80h only

@@ -161,7 +161,7 @@ The computation of the gravity response to large scale effects requires the conv
 
 #### Ocean bottom pressure models (OBPM)
 * ECCO-JPL
-    * 12-hourly: ftp://snowwhite.jpl.nasa.gov/data4/KalmanFilter and
+    * 12-hourly: ftp://snowwhite.jpl.nasa.gov/NearRealTime/KalmanFilter and
     * Monthly ftp://podaac-ftp.jpl.nasa.gov/allData/tellus/L3/ecco_obp/
     * Product: *OBPano* (ocean bottom pressure anomaly)
 * ECCO2 daily: ftp://ecco2.jpl.nasa.gov/data1/cube/cube92/lat_lon/quart_90S_90N/PHIBOT.nc/
@@ -345,7 +345,6 @@ This console is designed for the computation of the global hydrological effect (
         > The provided file `mGlobe_DATA_OceanGrid.mat` is used to identify Oceans/Continents.  
         > The enforced *Mass conservation* principle should be chosen in accordance with the Ocean bottom pressure model used for the non-tidal ocean loading effect.
 
-
 -   Topography: (Optional) Load a digital elevation model (DEM) for points up to 1 deg (spherical distance) from the given position.
     * The loading of a DEM with an insufficient spatial
     extension will result in NaN values.
@@ -366,6 +365,9 @@ This console is designed for the computation of the global hydrological effect (
         * Do not use this option if you split the computation into
     several periods/files as the mean value changes in time.
 -   *Threshold (deg)*: set the threshold between the local and the global zone expressed in the spherical distance (degrees, min. = 0.05, max = 1.00 deg). This value is than applied to the  re-interpolated mass grid and not the grid in the original  resolution.
+* *SHP (optional)*: select land shapefile (SHP) for high(er)-resolution land/ocean identification. SHP files as provided by [Natural Earth](http://www.naturalearthdata.com/downloads/) are supported.
+    * Shapefile will be applied only to local grid cells, i.e. up to max. 1.1 degrees from point of computation. Remaining cells (or all cells if SHP not selected) will be identified using `mGlobe_DATA_OceanGrid.mat` grid. This file can by created using the  `EXAMPLES\Scripts\create_ocean_grid.m` script.
+    * It is ineffective to load files with resolution higher than 1:50 m (due to the resolution of the computation grid)
 
 #### Example: Compute the GHE (GLDAS/NOAH10)
 This example shows how to compute a global hydrological effect for Vienna (2012) using the GLDAS/NOAH10 model (assuming the GLDAS/NOAH10 model has been downloaded).
