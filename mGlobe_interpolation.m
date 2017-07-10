@@ -31,9 +31,30 @@ if ischar(continent)
     boarders = shaperead(continent,'UseGeoCoords',true);
     DataID = LonN*0 - 0.5;
     for i = 1:length(boarders)
-        DataID = DataID + double(inpolygon(LonN,LatN,[boarders(i).Lon],[boarders(i).Lat]));
+        % Check if the polygon contains NaN and remove it (required for octave)
+        temp_lon = [boarders(i).Lon];
+        temp_lat = [boarders(i).Lat];
+        temp = find(isnan(temp_lon+temp_lat));
+        if length(temp)>1% && ~strcmp(v(end),')')
+            % First part = main polygon, other parts after NaN = remove
+            % from inside of polygon => revert sign
+            DataID = DataID + double(inpolygon(LonN,LatN,temp_lon(1:temp(1)-1),temp_lat(1:temp(1)-1)));
+            for j = 2:length(temp)
+                c = temp(j-1)+1;
+                DataID = DataID - double(inpolygon(LonN,LatN,temp_lon(c:temp(j)-1),temp_lat(c:temp(j)-1)));
+            end
+            clear c j
+        elseif length(temp) == 1 && temp~= length(temp)
+            % Special case for Euro-asia + Caspian Sea
+            DataID = DataID + double(inpolygon(LonN,LatN,temp_lon(1:temp-1),temp_lat(1:temp-1)));
+            DataID = DataID - double(inpolygon(LonN,LatN,temp_lon(temp+1:end),temp_lat(temp+1:end)));
+        else
+            DataID = DataID + double(inpolygon(LonN,LatN,temp_lon,temp_lat));
+        end
+        clear temp temp_lon temp_lat
     end
-    DataID(DataID>0) = 1;
+    % Round to -1 and 1
+    DataID(DataID>0) = 1;DataID(DataID<0) = -1;
 end
 LonI(LonI<0) = LonI(LonI<0)+360;                                            % Transform given longitude to <0,360) system
 LonN(LonN<0) = LonN(LonN<0)+360;                                            % Transform new longitude to <0,360) system

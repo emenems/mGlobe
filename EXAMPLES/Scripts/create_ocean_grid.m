@@ -11,17 +11,18 @@ clc
 % Set output grid. Output grid will show 1 in area of oceans/lakes and 0
 % over continents
 output_file = 'f:\mikolaj\code\libraries\mGlobe\mGlobe_DATA_OceanGrid.mat';
-output_resolution = 0.10; % in degrees!
+output_resolution = 0.2; % in degrees!
 
 % Input shape with continents (must be a Shapefile!).
 % Go to http://www.naturalearthdata.com/downloads/ and download 'land' and
-% 'lakes' shapefiles in desired resolution. Set lakes to [] for no lake
-% identification.
-input_continent = 'f:\mikolaj\data\global_model\boarders\naturalearthdata\110m_physical\ne_110m_land.shp';
-input_lakes = 'f:\mikolaj\data\global_model\boarders\naturalearthdata\110m_physical\ne_110m_lakes.shp';
+% 'lakes' shapefiles in desired resolution. It is not recommended to use
+% resolution higher than 1:50m
+% Set lakes to [] for no lake identification. 
+input_continent = 'f:\mikolaj\data\global_model\boarders\naturalearthdata\50m_physical\ne_50m_land.shp';
+input_lakes = 'f:\mikolaj\data\global_model\boarders\naturalearthdata\50m_physical\ne_50m_lakes.shp';
 
 % Show output (1=yes)
-show_grid = 0;
+show_grid = 1;
 
 %% Load data
 v = version;
@@ -35,6 +36,8 @@ if ~isempty(input_lakes)
 end
 
 %% Create grid
+mz = 0;mz2=1;
+cc = 0;cc2=0;
 [oceans.lon,oceans.lat] = meshgrid(-180+output_resolution/2:output_resolution:180-output_resolution/2,...
                                    -90+output_resolution/2:output_resolution:90-output_resolution/2);
 oceans.id = oceans.lon.*0+1;
@@ -44,7 +47,27 @@ for i = 1:length(boarders)
     if strcmp(v(end),')')
         fprintf('Land ID remaining: %d\n',length(boarders)-i);
     end
-    oceans.id = oceans.id - double(inpolygon(oceans.lon,oceans.lat,[boarders(i).Lon],[boarders(i).Lat]));
+    % Check if the polygon contains NaN and remove it (required for octave)
+    temp_lon = [boarders(i).Lon];
+    temp_lat = [boarders(i).Lat];
+    temp = find(isnan(temp_lon+temp_lat));
+    if length(temp)>1% && ~strcmp(v(end),')')
+        % First part = main polygon, other parts after NaN = remove
+        % from inside of polygon => revert sign
+        oceans.id = oceans.id - double(inpolygon(oceans.lon,oceans.lat,temp_lon(1:temp(1)-1),temp_lat(1:temp(1)-1)));
+        for j = 2:length(temp)
+            c = temp(j-1)+1;
+            oceans.id = oceans.id + double(inpolygon(oceans.lon,oceans.lat,temp_lon(c:temp(j)-1),temp_lat(c:temp(j)-1)));
+        end
+        clear c j
+    elseif length(temp) == 1 && temp~= length(temp)
+        % Special case for Euro-asia + Caspian Sea
+        oceans.id = oceans.id - double(inpolygon(oceans.lon,oceans.lat,temp_lon(1:temp-1),temp_lat(1:temp-1)));
+        oceans.id = oceans.id + double(inpolygon(oceans.lon,oceans.lat,temp_lon(temp+1:end),temp_lat(temp+1:end)));
+    else
+        oceans.id = oceans.id - double(inpolygon(oceans.lon,oceans.lat,temp_lon,temp_lat));
+    end
+    clear temp temp_lon temp_lat
     clc
 end
 
@@ -54,7 +77,25 @@ if ~isempty(input_lakes)
         if strcmp(v(end),')')
             fprintf('Lakes ID remaining: %d\n',length(lakes)-i);
         end
-        oceans.id = oceans.id + double(inpolygon(oceans.lon,oceans.lat,[lakes(i).Lon],[lakes(i).Lat]));
+        % Check if the polygon contains NaN and remove it (required for octave)
+        temp_lon = [lakes(i).Lon];
+        temp_lat = [lakes(i).Lat];
+        temp = find(isnan(temp_lon+temp_lat));
+        if length(temp)>1% && ~strcmp(v(end),')')
+            % First part = main polygon, other parts after NaN = remove
+            % from inside of polygon => revert sign
+            oceans.id = oceans.id + double(inpolygon(oceans.lon,oceans.lat,temp_lon(1:temp(1)-1),temp_lat(1:temp(1)-1)));
+            for j = 2:length(temp)
+                c = temp(j-1)+1;
+                oceans.id = oceans.id - double(inpolygon(oceans.lon,oceans.lat,temp_lon(c:temp(j)-1),temp_lat(c:temp(j)-1)));
+            end
+            clear c j
+        elseif length(temp) == 1 && temp~= length(temp)
+            oceans.id = oceans.id + double(inpolygon(oceans.lon,oceans.lat,temp_lon(1:temp-1),temp_lat(1:temp-1)));
+            oceans.id = oceans.id - double(inpolygon(oceans.lon,oceans.lat,temp_lon(temp+1:end),temp_lat(temp+1:end)));
+        else
+            oceans.id = oceans.id + double(inpolygon(oceans.lon,oceans.lat,temp_lon,temp_lat));
+        end
         clc
     end
 end
