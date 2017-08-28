@@ -55,6 +55,8 @@ function mGlobe_calc_Ocean(Input,output_file,output_file_type,start_calc,...
 %						  Example: mean_fileld ~=3: {[],[],[]}
 %						  Example: mean_fileld = 3: 
 %								   {'OCEAN_OMCT_atm_Effect.txt',1,9}
+%   varargin{1}       ... shape-file of local coastline
+%                         Example: 'ne_110m_land.shp'
 %
 % OUTPUT (saved automatically): 
 % date in matlab format, date civil, total effect, loading part of the
@@ -65,31 +67,36 @@ function mGlobe_calc_Ocean(Input,output_file,output_file_type,start_calc,...
 
 tic
 %% Set calculation properties
-memory_mult = 1;                                                            % Change for low memory (RAM) PC (>1 lower resolution, <1 higher resolution)
 % Zone 1
-delta_zone1 = 0.15*memory_mult;                                             % resolution used in zone 1 (degrees), i.e. for point with spherical distance > treshold_zone1
-treshold_zone1 = 14;                                                       	% degrees, threshold = spherical rectangle (for zone 1 to 4, zone 5 = spherical circle)
-% Zone 2
-delta_zone2 = 0.07*memory_mult;                                                         
-treshold_zone2 = 2;
-% Zone 3
-delta_zone3 = 0.04*memory_mult;
+delta_zone1 = 0.15;                                             
+treshold_zone1 = 14; % degrees, threshold = spherical rectangle (for zone 1 to 4, zone 5 = spherical circle)
+% Zone 3 (+2)
+delta_zone3 = 0.04;
 treshold_zone3 = 1.05;
-% Zone 4 & 5
-delta_zone4 = 0.008*memory_mult;
-delta_zone5 = 0.0008*memory_mult;
-treshold_zone4out = 5;                                                      % this value must be more than the treshold_zone4 to the diff. between rectangle and circle border
+% Zone 4 & 5: increase the resolution in case of detailed (SHP) coastline
+% file is selected
+if nargin >= 13 && ischar(varargin{1})
+    delta_zone4 = 0.004;
+    delta_zone5 = 0.0004;
+else
+    delta_zone4 = 0.008;
+    delta_zone5 = 0.0008;
+end
+treshold_zone4out = 5; % this value must be more than the treshold_zone4 to the diff. between rectangle and circle border
 if ghc_treshold>=0.1
+    % if threshold>0.1 -> zone 5 will not be used
     treshold_zone4in = ghc_treshold;
-    treshold_zone5in = NaN;                                                 % if threshold>0.1 -> zone 5 will not be used
+    treshold_zone5in = NaN;
     treshold_zone5out = NaN;
 else
-    treshold_zone4in = 0.1;                                                 % if threshold<=0.1 -> zone 5 will be calculated up to given threshold (min 0.05 deg)
+    % if threshold<=0.1 -> zone 5 will be calculated up to given threshold (min 0.05 deg)
+    treshold_zone4in = 0.1;
     treshold_zone5out = 0.1;
     treshold_zone5in = ghc_treshold;
 end
 
 %% Constant declaration
+ver = version;
 a = 6378137;                                                                % ellipsoidal major axis (m)
 b = 6356752.314245;
 e = sqrt((a^2-b^2)/a^2);
@@ -188,7 +195,7 @@ else
 end
 %% CALCULATION
 set(findobj('Tag','text_status'),'String','Ocean: Calculating non-tidal ocean effect...     '); drawnow % write status message to GUI
-for i = 1:size(time,1);
+for i = 1:size(time,1)
     check_out = 0;
     %% Load Ocean model
     switch model_version                                                    % switch between supported models
@@ -273,7 +280,14 @@ for i = 1:size(time,1);
                     delta_ghm = [abs(new.lon(1,1)-new.lon(1,2)) abs(new.lat(1,1)-new.lat(2,1))];
                     delta_lat = diff(vertcat(new.lat(1,:)-delta_ghm(2),new.lat));
                     delta_lon = diff(horzcat(new.lon(:,1)-delta_ghm(1),new.lon)');delta_lon = delta_lon';
-                    area = areaquad(new.lat-delta_lat/2,new.lon-delta_lon/2,new.lat+delta_lat/2,new.lon+delta_lon/2,referenceEllipsoid('wgs84','m')); % area of the loaded grid (oceans + continents)
+                    if ~strcmp(ver(end),')')
+                        fiG = mGlobe_elip2sphere(new.lon*pi/180,new.lat*pi/180);        % transform given (ellipsoidal) coord. to spherical
+                        delta_ghm_Sphere = abs(fiG+(delta_lat/2)*pi/180 - mGlobe_elip2sphere(new.lon*pi/180,(new.lat-delta_lat/2)*pi/180)); % calc. new grid resolution
+                        area = 2*r^2*(delta_ghm(1)*pi/180).*cos(fiG).*sin(delta_ghm_Sphere./2);
+                        clear fiG delta_ghm_Sphere
+                    else 
+                        area = areaquad(new.lat-delta_lat/2,new.lon-delta_lon/2,new.lat+delta_lat/2,new.lon+delta_lon/2,referenceEllipsoid('wgs84','m')); % area of the loaded grid (oceans + continents)
+                    end
                     total_area = sum(sum(area(~isnan(new.celkovo))));           % total area
                     clear delta_lon delta_lat                                   % remove used variables                           
                 end
@@ -290,7 +304,7 @@ for i = 1:size(time,1);
         fprintf('%s \n',out_message);
         check_out = 1;
     end
-    if check_out == 0;
+    if check_out == 0
         delta_ghm = [abs(new.lon(1,1)-new.lon(1,2)) abs(new.lat(1,1)-new.lat(2,1))];
         
         %% FIRST ZONE
@@ -298,39 +312,25 @@ for i = 1:size(time,1);
         if ~exist('dgE1','var')                                             % initialization for the first zone
             boundries1 = [-180+delta_zone1/2 -90+delta_zone1/2;180-delta_zone1/2 90-delta_zone1/2];
             [dgE1,dgP1,la_out1,fi_out1,la_grid1,fi_grid1] = mGlobe_Global(Input(2),Input(1),boundries1,delta_zone1,dgE_table,r,treshold_zone1);
-            [celkovo,DataID1] = mGlobe_interpolation(new.lon,new.lat,new.celkovo,la_grid1,fi_grid1,1); % interpolate water mass from GHM
+            [~,DataID1] = mGlobe_interpolation(new.lon,new.lat,new.celkovo,la_grid1,fi_grid1,1); % interpolate water mass from OBPM
         end
-        celkovo = mGlobe_interpolation(new.lon,new.lat,new.celkovo,la_grid1,fi_grid1,0); % interpolate water mass from GHM
+        celkovo = mGlobe_interpolation(new.lon,new.lat,new.celkovo,la_grid1,fi_grid1,0); % interpolate water mass from OBPM
         celkovo(isnan(celkovo)) = 0;                                        % set continental areas to zero
         dgE(i,z) = sum(sum(dgE1(DataID1==-1).*celkovo(DataID1==-1)))*1e9;   % multiply and add all cells
         dgP(i,z) = sum(sum(dgP1(DataID1==-1).*celkovo(DataID1==-1)))*1e9;
         clear celkovo boundries1
 
-        %% SECOND ZONE
-        z = 2;
-        if ~exist('dgE2','var')                                             % initialization for second zone
-            boundries2 = [min(min(la_out1))-delta_zone1/2+delta_zone2/2  min(min(fi_out1))-delta_zone1/2+delta_zone2/2;...
-                          max(max(la_out1))+delta_zone1/2-delta_zone2/2  max(max(fi_out1))+delta_zone1/2-delta_zone2/2];
-            clear la_out1 fi_out1
-            [dgE2,dgP2,la_out2,fi_out2,la_grid2,fi_grid2] = mGlobe_Global(Input(2),Input(1),boundries2,delta_zone2,dgE_table,r,treshold_zone2);
-            [celkovo,DataID2] = mGlobe_interpolation(new.lon,new.lat,new.celkovo,la_grid2,fi_grid2,1); % interpolate water mass from GHM
-        end
-        celkovo = mGlobe_interpolation(new.lon,new.lat,new.celkovo,la_grid2,fi_grid2,0); % interpolate water mass from GHM
-        celkovo(isnan(celkovo)) = 0;                                        % set continental areas to zero
-        dgE(i,z) = sum(sum(dgE2(DataID2==-1).*celkovo(DataID2==-1)))*1e9;   % multiply and add all cells
-        dgP(i,z) = sum(sum(dgP2(DataID2==-1).*celkovo(DataID2==-1)))*1e9;
-        clear celkovo boundries2
-
         %% THIRD ZONE
+        % Includes also the old Second zone
         z = 3;
         if ~exist('dgE3','var')                                             % initialization for third zone
-            boundries3 = [min(min(la_out2))-delta_zone2/2+delta_zone3/2  min(min(fi_out2))-delta_zone2/2+delta_zone3/2;...
-                          max(max(la_out2))+delta_zone2/2-delta_zone3/2  max(max(fi_out2))+delta_zone2/2-delta_zone3/2];
+            boundries3 = [min(min(la_out1))-delta_zone1/2+delta_zone3/2  min(min(fi_out1))-delta_zone1/2+delta_zone3/2;...
+                          max(max(la_out1))+delta_zone1/2-delta_zone3/2  max(max(fi_out1))+delta_zone1/2-delta_zone3/2];
             clear la_out2 fi_out2
             [dgE3,dgP3,la_out3,fi_out3,la_grid3,fi_grid3] = mGlobe_Global(Input(2),Input(1),boundries3,delta_zone3,dgE_table,r,treshold_zone3);
-            [celkovo,DataID3] = mGlobe_interpolation(new.lon,new.lat,new.celkovo,la_grid3,fi_grid3,1); % interpolate water mass from GHM
+            [~,DataID3] = mGlobe_interpolation(new.lon,new.lat,new.celkovo,la_grid3,fi_grid3,1); % interpolate water mass from OBPM
         end
-        celkovo = mGlobe_interpolation(new.lon,new.lat,new.celkovo,la_grid3,fi_grid3,0); % interpolate water mass from GHM
+        celkovo = mGlobe_interpolation(new.lon,new.lat,new.celkovo,la_grid3,fi_grid3,0); % interpolate water mass from OBPM
         celkovo(isnan(celkovo)) = 0;                                        % set continental areas to zero
         dgE(i,z) = sum(sum(dgE3(DataID3==-1).*celkovo(DataID3==-1)))*1e9;   % multiply and add all cells
         dgP(i,z) = sum(sum(dgP3(DataID3==-1).*celkovo(DataID3==-1)))*1e9;
@@ -344,9 +344,13 @@ for i = 1:size(time,1);
             clear la_out3 fi_out3
             [dgE4,dgP4,la_out4,fi_out4,la_grid4,fi_grid4] = mGlobe_Local(Input(2),Input(1),Input(3),[],boundries4,delta_zone4,dgE_table,r,treshold_zone4in,treshold_zone4out);
             dgP4(isnan(dgP4)) = 0;
-            [celkovo,DataID4] = mGlobe_interpolation(new.lon,new.lat,new.celkovo,la_grid4,fi_grid4,1); % interpolate water mass from GHM
+            if nargin >= 13 && ischar(varargin{1}) % interpolate water mass from OBPM using either shapefile or ocean/land grid for Land cell identification
+                [~,DataID4] = mGlobe_interpolation(new.lon,new.lat,new.celkovo,la_grid4,fi_grid4,varargin{1});
+            else
+                [~,DataID4] = mGlobe_interpolation(new.lon,new.lat,new.celkovo,la_grid4,fi_grid4,1);
+            end
         end
-        celkovo = mGlobe_interpolation(new.lon,new.lat,new.celkovo,la_grid4,fi_grid4,0); % interpolate water mass from GHM
+        celkovo = mGlobe_interpolation(new.lon,new.lat,new.celkovo,la_grid4,fi_grid4,0); % interpolate water mass from OBPM
         celkovo(isnan(celkovo)) = 0;                                        % set continental areas to zero
         dgE(i,z) = sum(sum(dgE4(DataID4==-1).*celkovo(DataID4==-1)))*1e9;   % multiply and add all cells
         dgP(i,z) = sum(sum(dgP4(DataID4==-1).*celkovo(DataID4==-1)))*1e9;
@@ -359,12 +363,15 @@ for i = 1:size(time,1);
                 boundries5 = [min(min(la_out4))-delta_zone4/2+delta_zone5/2  min(min(fi_out4))-delta_zone4/2+delta_zone5/2;...
                               max(max(la_out4))+delta_zone4/2-delta_zone5/2  max(max(fi_out4))+delta_zone4/2-delta_zone5/2];
                 clear la_out4 la_out4 fi_out4 fi_out4
-                [dgE5,dgP5,la_out5,fi_out5,la_grid5,fi_grid5] = mGlobe_Local(Input(2),Input(1),Input(3),[],boundries5,delta_zone5,dgE_table,r,treshold_zone5in,treshold_zone5out);
+                [dgE5,dgP5,~,~,la_grid5,fi_grid5] = mGlobe_Local(Input(2),Input(1),Input(3),[],boundries5,delta_zone5,dgE_table,r,treshold_zone5in,treshold_zone5out);
                 dgP5(isnan(dgP5)) = 0;
-                clear la_out5 fi_out5
-                [celkovo,DataID5] = mGlobe_interpolation(new.lon,new.lat,new.celkovo,la_grid5,fi_grid5,1); % interpolate water mass from GHM
+                if nargin >= 13 && ischar(varargin{1}) % interpolate water mass from OBPM using either shapefile or ocean/land grid for Land cell identification
+                    [~,DataID5] = mGlobe_interpolation(new.lon,new.lat,new.celkovo,la_grid5,fi_grid5,varargin{1}); 
+                else
+                    [~,DataID5] = mGlobe_interpolation(new.lon,new.lat,new.celkovo,la_grid5,fi_grid5,1);
+                end
             end
-            celkovo = mGlobe_interpolation(new.lon,new.lat,new.celkovo,la_grid5,fi_grid5,0); % interpolate water mass from GHM
+            celkovo = mGlobe_interpolation(new.lon,new.lat,new.celkovo,la_grid5,fi_grid5,0); % interpolate water mass from OBPM
             celkovo(isnan(celkovo)) = 0;                                    % set continental areas to zero
             dgE(i,z) = sum(sum(dgE5(DataID5==-1).*celkovo(DataID5==-1)))*1e9; % multiply and add all cells
             dgP(i,z) = sum(sum(dgP5(DataID5==-1).*celkovo(DataID5==-1)))*1e9;
@@ -378,13 +385,12 @@ for i = 1:size(time,1);
         set(findobj('Tag','text_status'),'String',out_message); drawnow     % write message to GUI
         clear new
     else
-            row_id_nan(i) = 1;
-            set(findobj('Tag','text_status'),'String',[nazov,' not found => left out!']); % warn user
-%             fprintf('%s not found => left out!\n',nazov);
+        row_id_nan(i) = 1;
+        set(findobj('Tag','text_status'),'String',[nazov,' not found => left out!']); % warn user
     end
 end
 if step_calc == 6 && model_version ~=3                                      % set accurate time (midpoint) for monthly data
-    for ti = 1:size(time,1);
+    for ti = 1:size(time,1)
         time(ti,7) = (time(ti,7)+datenum(time(ti,1),time(ti,2)+1,1)-1)/2;   % rewrite existing time to accurate value
     end
     time(:,1:6) = datevec(time(:,7));
@@ -406,12 +412,12 @@ if sum(sum(abs(dgE(~isnan(dgE))))) > 0
         dgP_write = dgP_write - mean(dgP_write(~isnan(dgP_write)));
         total_write = total_write - mean(total_write(~isnan(total_write)));
     end
-%     save([output_file(1:end-4) '.mat'],'total','dgE','dgP','time');
+    
     %% Output xls
     duration = toc;
     set(findobj('Tag','text_status'),'String','Writing output file...');drawnow
     clear la_out fi_out DEM5 geoid nazov
-    if output_file_type(1) == 1
+    if output_file_type(1) == 1 && strcmp(ver(end),')') % only for Matlab
         try
         table = {'Results of the non-tidal ocean loading effect calculation'};
         table(2,1:4) = {'Coord.:','phi','lambda','height'};
@@ -422,46 +428,56 @@ if sum(sum(abs(dgE(~isnan(dgE))))) > 0
         table(5,1) = {'no DEM'};
         table(6,1) = {'Excluded area:'};
         table(6,3) = {'nothing excluded'};
-        table(7,1) = {'Model:'};table(7,3) = {model_name};
-        table(8,1) = {'Model res.:'};
-        table(8,3) = {sprintf('%3.2fx%3.2f deg',delta_ghm(1),delta_ghm(2))};
-        if step_calc == 6
-            table(8,4) = {'Monthly'};
+        table(7,1) = {'Local land/ocean SHP file:'};
+        if nargin >= 13 && ischar(varargin{1})
+            table(7,3) = {varargin{1}};
         else
-            table(8,4) = {'Daily/hourly'};
+            table(7,3) = {'No file loaded (only mGlobe_DATA_OceanGrid.mat used)'};
         end
-        table(9,1) = {'Mass conservation:'};
+        table(8,1) = {'Model:'};table(8,3) = {model_name};
+        table(9,1) = {'Model res.:'};
+        table(9,3) = {sprintf('%3.2fx%3.2f deg',delta_ghm(1),delta_ghm(2))};
+        if step_calc == 6
+            table(9,4) = {'Monthly'};
+        else
+            table(9,4) = {'Daily/hourly'};
+        end
+        table(10,1) = {'Mass conservation:'};
         switch mean_field
             case 1
-            table(9,3) = {'off'};
+            table(10,3) = {'off'};
             case 2
-            table(9,3) = {'Computed area average subtracted'};
+            table(10,3) = {'Computed area average subtracted'};
             case 3
-            table(9,3) = {sprintf('Given pressure subtracted %s',pressure_time_series(1))};
+            table(10,3) = {sprintf('Given pressure subtracted %s',...
+                                pressure_time_series(1))};
         end
-        table(10,1) = {'GHE/LHE threshold (deg):'};
-        table(10,3) = num2cell(ghc_treshold);
-        table(11,1) = {'Calc. date:'};
-        table(11,2:7) = num2cell(clock);
-        table(12,1) = {'Calc. duration (min):'};
-        table(12,3) = num2cell(duration/60);
-        table(13,1) = {'Flagged value: empty cell'};
-        table(14,1) = {'Results (in nm/s^2)'};
-        table(15,1:13) = {'time_matlab','year','month','day','hour','minute','second','total_effect','continet_loading','continent_newton','ocean_loading','ocean_newton','subtracted_pressure(Pa)'};
+        table(11,1) = {'GHE/LHE threshold (deg):'};
+        table(11,3) = num2cell(ghc_treshold);
+        table(12,1) = {'Calc. date:'};
+        table(12,2:7) = num2cell(clock);
+        table(13,1) = {'Calc. duration (min):'};
+        table(13,3) = num2cell(duration/60);
+        table(14,1) = {'Flagged value: empty cell'};
+        table(15,1) = {'Results (in nm/s^2)'};
+        table(16,1:13) = {'time_matlab','year','month','day','hour','minute',...
+                            'second','total_effect','continet_loading',...
+                            'continent_newton','ocean_loading','ocean_newton',...
+                            'subtracted_pressure(Pa)'};
         if size(time(:,7),1) >=65536                                        % write xls only if the total number of rows < max allowed Excel length
             output_file_type(2) = 1;                                        % in such case, the results will be written only to txt/tsoft format
-            table(15,1) = {'Data to long for excel file-for results,see created txt file'};
+            table(17,1) = {'Data too long for excel file-for results,see created txt file'};
             output_file_xls = output_file(1:end-4); 
             xlswrite([output_file_xls '.xls'],table);
         else
-            table(16:16+size(total,1)-1,1) = num2cell(time(:,7));
-            table(16:16+size(total,1)-1,2:7) = num2cell(datevec(time(:,7)));
-            table(16:16+size(total,1)-1,8) = num2cell(total_write);
-            table(16:16+size(total,1)-1,9) = num2cell(zeros(length(time(:,7)),1));
-            table(16:16+size(total,1)-1,10) = num2cell(zeros(length(time(:,7)),1));
-            table(16:16+size(total,1)-1,11) = num2cell(dgE_write);
-            table(16:16+size(total,1)-1,12) = num2cell(dgP_write);
-            table(16:16+size(total,1)-1,13) = num2cell(mean_value);
+            table(17:17+size(total,1)-1,1) = num2cell(time(:,7));
+            table(17:17+size(total,1)-1,2:7) = num2cell(datevec(time(:,7)));
+            table(17:17+size(total,1)-1,8) = num2cell(total_write);
+            table(17:17+size(total,1)-1,9) = num2cell(zeros(length(time(:,7)),1));
+            table(17:17+size(total,1)-1,10) = num2cell(zeros(length(time(:,7)),1));
+            table(17:17+size(total,1)-1,11) = num2cell(dgE_write);
+            table(17:17+size(total,1)-1,12) = num2cell(dgP_write);
+            table(17:17+size(total,1)-1,13) = num2cell(mean_value);
             output_file_xls = output_file(1:end-4);
             xlswrite([output_file_xls '.xls'],table);
         end
@@ -483,6 +499,12 @@ if sum(sum(abs(dgE(~isnan(dgE))))) > 0
         fprintf(fid,'%% Calculation settings:\n'); 
         fprintf(fid,'%% No DEM\n');
         fprintf(fid,'%% Nothing Excluded\n');
+        fprintf(fid,'%% Local land/ocean SHP file:\t');
+        if nargin >= 13 && ischar(varargin{1})
+            fprintf(fid,' %s\n',varargin{1});
+        else
+            fprintf(fid,' No file loaded (only mGlobe_DATA_OceanGrid.mat used)\n');
+        end        
         fprintf(fid,'%% Model:\t %s\n',model_name);
         fprintf(fid,'%% Model resolution:\t%3.2fx%3.2f deg, ',delta_ghm(1),delta_ghm(2));
         if step_calc == 6
@@ -507,11 +529,11 @@ if sum(sum(abs(dgE(~isnan(dgE))))) > 0
         fprintf(fid,'%% Result units: nm/s^2\n');
         fprintf(fid,'%% time_matlab   \tDate       \tTime	 total_eff	 cont_load	 cont_newton	 ocean_load	 ocean_newton   subtracted_press(Pa)\n');
         [year,month,day,hour,minute,second] = datevec(time(:,7));
-        for i = 1:length(time(:,7));
-        fprintf(fid,'%12.6f   \t%4d%02d%02d   \t%02d%02d%02d\t\t%7.2f\t\t%7.2f\t\t%7.2f\t\t%7.2f\t\t%7.2f\t\t%12.2f\n',...
-            time(i,7),year(i),month(i),day(i),hour(i),minute(i),second(i),...
-            total_write(i),0,0,dgE_write(i),...
-            dgP_write(i),mean_value(i,1));
+        for i = 1:length(time(:,7))
+            fprintf(fid,'%12.6f   \t%4d%02d%02d   \t%02d%02d%02d\t\t%7.2f\t\t%7.2f\t\t%7.2f\t\t%7.2f\t\t%7.2f\t\t%12.2f\n',...
+                time(i,7),year(i),month(i),day(i),hour(i),minute(i),second(i),...
+                total_write(i),0,0,dgE_write(i),...
+                dgP_write(i),mean_value(i,1));
         end
         fclose('all');
         catch
@@ -549,6 +571,12 @@ if sum(sum(abs(dgE(~isnan(dgE))))) > 0
         fprintf(fid,' Calculation settings:\n'); 
         fprintf(fid,' No DEM\n');
         fprintf(fid,' Nothing Excluded\n');
+        fprintf(fid,' Local land/ocean SHP file:\t');
+        if nargin >= 13 && ischar(varargin{1})
+            fprintf(fid,' %s\n',varargin{1});
+        else
+            fprintf(fid,' No file loaded (only mGlobe_DATA_OceanGrid.mat used)\n');
+        end
         fprintf(fid,' Model:\t %s\n',model_name);
         fprintf(fid,' Model resolution:\t%3.2fx%3.2f deg, ',delta_ghm(1),delta_ghm(2));
         if step_calc == 6
@@ -571,11 +599,11 @@ if sum(sum(abs(dgE(~isnan(dgE))))) > 0
         fprintf(fid,'[COUNTINFO] %8.0f\n\n',length(time(:,7)));
         fprintf(fid,'[DATA]\n');
         [year,month,day,hour,minute,second] = datevec(time(:,7));clear i
-        for i = 1:length(time(:,7));
-        fprintf(fid,'%04d %02d %02d  %02d %02d %02d   %17.3f %17.3f %17.3f %17.3f %17.3f %17.3f\n',...
-            year(i),month(i),day(i),hour(i),minute(i),second(i),...
-            sum_for_tsf(i),0,0,dgE_write(i),...
-            dgP_write(i),mean_value(i,1));
+        for i = 1:length(time(:,7))
+            fprintf(fid,'%04d %02d %02d  %02d %02d %02d   %17.3f %17.3f %17.3f %17.3f %17.3f %17.3f\n',...
+                year(i),month(i),day(i),hour(i),minute(i),second(i),...
+                sum_for_tsf(i),0,0,dgE_write(i),...
+                dgP_write(i),mean_value(i,1));
         end
         fclose('all');
         catch

@@ -16,7 +16,8 @@ This toolbox is available for:
 * [Octave](https://github.com/emenems/mGlobe_octave): Octave GNU 4.0 (for GUI) or later. See section 8 for details.
     * The Octave *mGlobe* GUI works only under Windows. When using *mGlobe* under Linux, i.e., via command line, see header of each function for help ( *mGlobe* has not been tested under Mac OS). Folder /EXAMPLES/ contains several scripts that show how to use *mGlobe* without GUI.
     * Many *mGlobe* functions use Octave netcdf package. Install this package before running *mGlobe* (`pkg install -forge netcdf`).
-        * Additionally, install netcdf library for Linux (`apt-get install netcdf-bin` and `apt-get install libnetcdf-dev`).  
+        * Additionally, install netcdf library for Linux (`apt-get install netcdf-bin` and `apt-get install libnetcdf-dev`).
+    * For reading Shapefiles, install `mapping` and `io` packages
     * The results acquired using Matlab and Octave may slightly differ,
     however, the relative differences (not absolute values) should not
     exceed 0.1 nm.s<sup>-2</sup>.
@@ -364,9 +365,10 @@ This console is designed for the computation of the global hydrological effect (
     * The *subtract average* option will subtract the mean value from all results.
         * Do not use this option if you split the computation into
     several periods/files as the mean value changes in time.
--   *Threshold (deg)*: set the threshold between the local and the global zone expressed in the spherical distance (degrees, min. = 0.05, max = 1.00 deg). This value is than applied to the  re-interpolated mass grid and not the grid in the original  resolution.
-* *SHP (optional)*: select land shapefile (SHP) for high(er)-resolution land/ocean identification. SHP files as provided by [Natural Earth](http://www.naturalearthdata.com/downloads/) are supported.
-    * Shapefile will be applied only to local grid cells, i.e. up to max. 1.1 degrees from point of computation. Remaining cells (or all cells if SHP not selected) will be identified using `mGlobe_DATA_OceanGrid.mat` grid. This file can by created using the  `EXAMPLES\Scripts\create_ocean_grid.m` script.
+-   *Threshold (deg)*: set the threshold between the local and the global zone expressed in the spherical distance (degrees, min = 0.05, max = 1.00 deg). This value is than applied to the  re-interpolated mass grid and not the grid in the original  resolution.
+* *SHP (optional)*: select **land** shapefile (SHP) for high(er)-resolution land/ocean identification. SHP files as provided by [Natural Earth](http://www.naturalearthdata.com/downloads/) are supported.
+    * For absolute majority of sites, this option will not affect the result in substantial way, but will increase the computation time significantly (especially when using Octave)
+    * Shapefile will be applied only to local grid cells, i.e. up to max. 1.05 degrees from point of computation. Remaining cells (or all cells if SHP not selected) will be identified using `mGlobe_DATA_OceanGrid.mat` grid. This file can by created using the  `EXAMPLES\Scripts\create_ocean_grid.m` script.
     * It is ineffective to load files with resolution higher than 1:50 m (due to the resolution of the computation grid)
 
 #### Example: Compute the GHE (GLDAS/NOAH10)
