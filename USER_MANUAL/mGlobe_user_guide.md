@@ -210,17 +210,7 @@ requested file names will be generated automatically).
 #### Example: convert ERA Interim model
 This example shows how to convert the downloaded ERA Interim (surface level, not the pressure level) model to the supported file format.  
 * First go to [ERA Server](http://apps.ecmwf.int/datasets/data/interim-full-daily/?levtype=sfc) and register/login if required.
-* Than select the 2012 year (all months)
-* Select the time: 00,06,12,18 (6 hour resolution). Select the step 0, i.e. the analysis.
-* Than select the following parameters:
-    * *Snow depth*,
-*Volumetric soil water layer 1-4* and press Retrieve **NetCDF**.
-* If necessary
-change the attributes Grid to 0.75x0.75 and Area: Default (as archived =
-global coverage).
-* Press Retrieve now. The downloading may take several
-hours depending on the internet connection (file size around 1 GB)
-    * Check the [ERA instructions](https://software.ecmwf.int/wiki/display/WEBAPI/Access+ECMWF+Public+Datasets) for more convenient downloading
+* Modify and use the `EXAMPLES/Scripts/era_interim/download_era_hydro_data.py` [Python script](https://software.ecmwf.int/wiki/display/WEBAPI/Access+ECMWF+Public+Datasets). 
 * After you have downloaded the ERA Interim NetCDF file, run *mGlobe* and select the **Models** panel.
 * Change the date to *Start* = 2012 01 01 00
 and *End* = 2012 12 31 18 (hours must be equal to 0/6/12/18)
@@ -557,27 +547,14 @@ ECMWF (ERA Interim Analysis) data: No conversion is required. The *mGlobe* uses 
 The MERRA(1) is offline since end of February 2016. Support for MERRA2 model will be added "soon". To compute MERRA(1) atmospheric effect, check previous version/commits of *mGlobe*
 
 #### Example: download the ERA Interim temperature
-This example shows how to download and store the ERA Interim temperature data required for the computation of the atmospheric effect.
+The easiest way to download the data directly to required format is to (modify and) use the `EXAMPLES/Scripts/era_interim/download_era_atmo_data.py` [Python script](https://software.ecmwf.int/wiki/display/WEBAPI/Access+ECMWF+Public+Datasets). Downloading requires Login/registation, see [ERA dataset](http://apps.ecmwf.int/datasets/data/interim-full-daily/?levtype=pl).
 
-**Pressure level:** First go to [ERA dataset](http://apps.ecmwf.int/datasets/data/interim-full-daily/?levtype=pl) and Login/register. It is highly recommended to download the data using [Python script](https://software.ecmwf.int/wiki/display/WEBAPI/Access+ECMWF+Public+Datasets). Otherwise download manually:
-* Select the 2012 year (all months)
-* Select time 12:00:00
-* Temperature parameter (all levels, i.e. 1000 to 1 hPa)
-* Press Retrieve NetCDF.
-    * Ensure that the Area is set to ’Default (as archived)’, i.e. global coverage and the Grid is equal 0.75x0.75.
-    * Press Retrieve now.
-* Save the file respecting the prescribed suffix, e.g. `ERA_GEOPOT_24hStep_12_2012.nc`, to your folder with the temperature data.
-
-To download the **surface temperature** go to [ERA dataset](http://apps.ecmwf.int/datasets/data/interim-full-daily/?levtype=sfc).
-* Select the whole year (2012)
-* Select all time check-boxes (0,6,12,18)
-* Step 0
-* Then select following parameters:
-    * 2 metre temperature,
-    * 2 metre dewpoint temperature and
-    * Surface pressure.
-* Press Retrieve NetCDF as in the case of the pressure level data.
-* Save the file respecting the prescribed suffix, e.g. `ERA_SP_2T_2D_ALLh_06hStep_D_2012.nc`, to your folder with the surface data.
+Unfortunately, after recent ERA dataset update, manual downloading is possible for one month only. Just for clarity, the Python scripts will do this:   
+* Go through all required parameters
+* Select the a year 
+* Select all hours
+* Set global coverage and the Grid  (0.75x0.75)
+* Save the file respecting the prescribed suffix, e.g. `ERA_GEOPOT_24hStep_12_2012.nc` or `ERA_SP_2T_2D_ALLh_06hStep_D_2012.nc`, to your folder
 
 #### Example: compute the Atmospheric effect
 This example shows how to compute the atmospheric effect for Vienna (2012) using ERA Interim model. It is advisable to use ERA model instead of MERRA as better results were achieved using ERA and the data files are provided in more consistent way.
