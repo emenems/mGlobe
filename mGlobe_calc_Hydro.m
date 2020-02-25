@@ -34,7 +34,8 @@ function mGlobe_calc_Hydro(Input,output_file,output_file_type,DEM_file,...
 %					      5 = GLDAS/VIC, 6 = ERA, 7 = MERRA,
 %					      8 = OTHER, 9 = GRACE, 10 = NCEP Reanalysis 2, 
 %                         11 = MERRA, 12 = NCEP Reanalysis 1 (beta),
-%                         13 = GLDASv2.1/NOAH025
+%                         13 = GLDASv2.1/NOAH025,
+%                         14 = ERA5
 %						  Example: 3
 %   model_layer       ... Model layer (depends on model_calc). For all
 %						  models, 1 = total water storage
@@ -682,8 +683,59 @@ for i = 1:size(time,1)
                 set(findobj('Tag','text_status'),'String',out_message); drawnow
                 check_out = 1;
             end
+        case 14                                                             % ERA5
+            model_name = 'ERA5';
+            % %% Here, "constant" mean total water-storage is set. This is then subtracted from value given by i-th file (hour/month)
+            % %% For new model, this must be computed. The easiest way is to run the code for all combinations and insert the computed value Here
+            % %% You need to run the code for all "exclusion" combination. This is because the mean total water storage will be different when excluding Greenland, Antarctica, both, nothing...
+            if exclude_calc(1) == 0 && exclude_calc(2) == 0                 % nothing is excluded
+                ref_mass_conserv = 0; % %% RUN AND CHANGE after computing mean
+            elseif exclude_calc(2) == 0 && exclude_calc(1) == 1             % only Greenland excluded
+                ref_mass_conserv = 0; % %% RUN AND CHANGE after computing mean
+            elseif exclude_calc(2) == 1 && exclude_calc(1) == 1             % Greenland and Antarctica excluded
+                ref_mass_conserv = 0; % %% RUN AND CHANGE after computing mean
+            elseif exclude_calc(2) == 1 && exclude_calc(1) == 0             % only Antarctica excluded
+                ref_mass_conserv = 0; % %% RUN AND CHANGE after computing mean
+            end
+            if step_calc == 6
+                % %% SET the name according to mGlobe_convert_ERA5
+                nazov = fullfile(ghc_path,sprintf('ERA5_M_%4d%02d.mat',time(i,1),time(i,2))); 
+            else
+                % %% SET the name according to mGlobe_convert_ERA5
+                nazov = fullfile(ghc_path,sprintf('ERA5_6H_%4d%02d%02d_%02d.mat',time(i,1),time(i,2),time(i,3),time(i,4)));
+            end
+            try
+                new = importdata(nazov);
+                % %% This looks OK, see layer specs https://confluence.ecmwf.int/display/CKB/ERA5-Land%3A+data+documentation
+                switch model_layer
+                    case 1
+                        new.celkovo = (new.swvl1*0.07 + new.swvl2*0.21 + new.swvl3*0.72 + new.swvl4*1.89)*1000 + new.sd*1000; % transform from m3/m3 and m of water to kg/m^2 (mm)
+                        out_layer = 'total';
+                    case 2
+                        new.celkovo = (new.swvl1*0.07)*1000;out_layer = 'swvl1';
+                    case 3
+                        new.celkovo = (new.swvl2*0.21)*1000;out_layer = 'swvl2';
+                    case 4
+                        new.celkovo = (new.swvl3*0.72)*1000;out_layer = 'swvl3';
+                    case 5
+                        new.celkovo = (new.swvl4*1.89)*1000;out_layer = 'swvl4';
+                    case 6
+                        new.celkovo = new.sd*1000;out_layer = 'sd';
+                end
+                % %% THis looks also OK, see https://confluence.ecmwf.int/display/CKB/ERA5%3A+What+is+the+spatial+reference#ERA5:Whatisthespatialreference-Gridresolution
+                new.lon(new.lon>=180) = new.lon(new.lon>=180) - 360;        % transform coordinates/longitude to (-180,180) system  
+                ri = find(abs(diff(new.lon(1,:)))==max(abs(diff(new.lon(1,:)))));
+                new.lon = horzcat(new.lon(:,ri+1:end),new.lon(:,1:ri));     % Connect matrices to remove discontinuity
+            	new.lat = horzcat(new.lat(:,ri+1:end),new.lat(:,1:ri));
+                new.celkovo = horzcat(new.celkovo(:,ri+1:end),new.celkovo(:,1:ri));clear ri;
+            catch exeption
+                out_message = sprintf('Hydro: file %s not found',nazov);
+                set(findobj('Tag','text_status'),'String',out_message); drawnow
+                check_out = 1;
+            end
     end
     if check_out == 0
+        % %% I would recommend to extract/fetch the data with constant 0.25 or 0.50 deg resolution (https://confluence.ecmwf.int/display/CKB/ERA5%3A+What+is+the+spatial+reference#ERA5:Whatisthespatialreference-Gridresolution)
         delta_ghm = [abs(new.lon(1,1)-new.lon(1,2)) abs(new.lat(1,1)-new.lat(2,1))];
         %% Determine mass conservation deficit
         if ~exist('land_areas','var')
@@ -1154,6 +1206,12 @@ if sum(sum(abs(dgE(~isnan(dgE))))) > 0
             set(findobj('Tag','text_status'),'String','GHE: Could not write tsf file...');drawnow
             fprintf('Ocean: Could not write tsf file (see *.txt for results)...\n');
         end
+    end
+    % %% For intial model run only! May delete after computing mean ref_mass_conserv (or keep for other model, just set model_calc accordingly)
+    % %% It will save the result in. Read this file and compute mean value over time. Use this value to set ref_mass_conserv in the respective part of the code
+    % %% Use either monthly or daily (or 48 hour step). It is not necessary to run with highes time resolution!
+    if ref_mass_conserv == 0 && model_calc == 14
+        csvwrite(sprintf('GHM_conserv_model_calc_%02d_Greenland_%1d_Antarctica_%1d.csv',model_calc,exclude_calc(1),exclude_calc(2)),GHM_conserv)
     end
     set(findobj('Tag','text_status'),'String','Hydro: GHE calculated...');drawnow  % write final message
 else

@@ -316,7 +316,7 @@ function mGlobe(in_switch)
                     'Style','Text','String','Model');
         uicontrol(p1_5,'units','characters','Position',[13.6 2.769 27.6 1.692],...
                     'Style','Popupmenu','Tag','popup_hydro_model',...
-                    'String','GLDAS/CLM|GLDAS/MOS|GLDAS/NOAH (0.25°)|GLDAS/NOAH (1°)|GLDAS/VIC|ERA Interim|MERRA (assimilation)|Other|GRACE|NCEP Reanalysis-2|MERRA2|NCEP Reanalysis-1|GLDASv2.1/NOAH (0.25°)',...
+                    'String','GLDAS/CLM|GLDAS/MOS|GLDAS/NOAH (0.25ï¿½)|GLDAS/NOAH (1ï¿½)|GLDAS/VIC|ERA Interim|MERRA (assimilation)|Other|GRACE|NCEP Reanalysis-2|MERRA2|NCEP Reanalysis-1|GLDASv2.1/NOAH (0.25ï¿½)',...
                     'Value',3,'BackgroundColor','white','CallBack','mGlobe select_hydro_model');
         uicontrol(p1_5,'units','characters','Position',[67.2 3 8 1.077],...
                     'Style','Text','Tag','push_hydro_model_path',...
@@ -1066,18 +1066,20 @@ function mGlobe(in_switch)
             case 'select_hydro_model'                                       % change the shown path according to selected model
                 % Read path set file
                 [ghm_main,~,grace_main] = mGlobe_getModelPath;
+                % %% I have created GHM/ERA5 folder. this will just concatenate base path + ERA5 suffix
                 ghm_path = {fullfile(ghm_main,'CLM'),fullfile(ghm_main,'MOS'),...
                             fullfile(ghm_main,'NOAH025'),fullfile(ghm_main,'NOAH10'),...
                             fullfile(ghm_main,'VIC'),fullfile(ghm_main,'ERA'),fullfile(ghm_main,'MERRA'),...
                             fullfile(ghm_main,'OTHER'),fullfile(grace_main,'LAND'),fullfile(ghm_main,'NCEP'),...
                             fullfile(ghm_main,'MERRA2'),fullfile(ghm_main,'NCEP'),...
-                            fullfile(ghm_main,'NOAH025v21')};
+                            fullfile(ghm_main,'NOAH025v21'),fullfile(ghm_main,'ERA5')};
                 val = get(findobj('Tag','popup_hydro_model'),'Value');
                 set(findobj('Tag','push_hydro_model_path'),'UserData',ghm_path{val}); % each button stores data about the path to model data
                 set(findobj('Tag','text_hydro_model_path'),'String',ghm_path{val}); % show path for current model
                 set(findobj('Tag','popup_hydro_model_layer'),'Value',1); % always set the layer to 'total' (by default)
                 set(findobj('Tag','push_down_other_path'),'UserData',fullfile(ghm_main,'OTHER'));
                 set(findobj('Tag','text_down_other_path'),'String',fullfile(ghm_main,'OTHER'));
+                % %% Will need to adjust for ERA5 (need to have Matlab to see what it does)
                 if val == 6
                     set(findobj('Tag','push_down_era_path'),'UserData',fullfile(ghm_main,'ERA'));
                     set(findobj('Tag','text_down_era_path'),'String',fullfile(ghm_main,'ERA'));
@@ -1112,6 +1114,9 @@ function mGlobe(in_switch)
                         set(findobj('Tag','popup_hydro_model_layer'),'String','total|soilw1|soilw2|weasd');
                     case 13
                         set(findobj('Tag','popup_hydro_model_layer'),'String','total|soilm1|soilm2|soilm3|soilm4|swe');
+                    case 14
+                        % %% This should be now OK = 4 SM layers + snow: https://confluence.ecmwf.int/display/CKB/ERA5-Land%3A+data+documentation
+                        set(findobj('Tag','popup_hydro_model_layer'),'String','total|swvl1|swvl2|swvl3|swvl4|sd');
                 end
             case 'load_hydro_dem'                                          % Load DEM for Hydro effect (Continental water storage)
                 [name,path] = uigetfile('*.*','Load DEM up to 1 deg from point of observation');
